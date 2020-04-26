@@ -6,9 +6,13 @@ export const isTurnipPriceMessage = (messageContent: string): boolean => {
     return MessageRegex.test(messageContent);
 };
 
-export const parseTurnipMessage = (
-    messageContent: string,
-): { price: number; priceWindow: PriceWindow; day: PriceDay } => {
+export interface TurnipPriceMessageValues {
+    price: number,
+    priceWindow: PriceWindow,
+    day: PriceDay
+}
+
+export const parseTurnipMessage = (messageContent: string): TurnipPriceMessageValues => {
     const matches = MessageRegex.exec(messageContent);
     if (matches === null) {
         throw new Error('Parsing turnip price message failed, this should not be possible');

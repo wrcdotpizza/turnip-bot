@@ -2,6 +2,7 @@ import Redis from 'ioredis';
 import { User } from '../../entity/user';
 import { Message } from 'discord.js';
 import { Repository } from 'typeorm';
+import { getEnumValues } from '../../helpers/get-enum-values';
 
 enum WelcomeMessages {
     islandPurchase = 'islandPurchase',
@@ -19,7 +20,7 @@ export enum PricePatterns {
     decreasing = 'decreasing',
     largeSpike = 'large spike',
     smallSpike = 'small spike',
-    unknown = 'unkown',
+    unknown = 'unknown',
 }
 
 const welcomeKeyForUser = (user: User): string => `welcome:${user.id}`;
@@ -41,9 +42,7 @@ function handleYesOrNoAnswer(messageText: string): YesOrNoResponse {
 function handleEnumAnswer<T>(messageText: string, answerEnum: any): T | null {
     messageText.trim();
     messageText.toLowerCase();
-    const enumValues = Object.keys(answerEnum)
-        .filter(k => typeof answerEnum[k as any] === 'string')
-        .map(k => answerEnum[k as any]);
+    const enumValues = getEnumValues<string>(answerEnum);
     const enumRegex = new RegExp(`^(${enumValues.join('|')})$`);
     if (!enumRegex.test(messageText)) {
         return null;
@@ -76,7 +75,7 @@ async function askForPreviousPattern(redis: Redis.Redis, user: User, msg: Messag
     await msg.author.send(
         `Thanks. What was your previous turnip price pattern? (fluctuating, large spike, decreasing, small spike)`,
     );
-    await msg.author.send(`If you don't know, just answer "I don't know".`);
+    await msg.author.send(`If you don't know, just answer "unknown".`);
     await redis.set(lastMessageKeyForUser(user), WelcomeMessages.pattern);
 }
 
