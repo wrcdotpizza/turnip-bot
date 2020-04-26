@@ -8,7 +8,7 @@ import { TurnipWeek } from '../entity/turnip-week';
 import { Command } from './command';
 
 export class StorePrice implements Command {
-    public static command = '/price';
+    public static command = '/turnip-price';
     private priceRepository: Repository<TurnipPrice>;
     private turnipWeekRepository: Repository<TurnipWeek>;
 
@@ -31,7 +31,7 @@ export class StorePrice implements Command {
         }
 
         await this.saveCurrentTurnipPrice(values, week);
-        await message.react('👍');
+        await message.react('✅');
     }
 
     private getCurrentTurnipWeek(user: User): Promise<TurnipWeek | undefined> {

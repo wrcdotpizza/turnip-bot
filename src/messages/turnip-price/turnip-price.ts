@@ -1,6 +1,6 @@
 import { PriceWindow, PriceDay, PriceDayForString } from '../../entity/turnip-price';
 
-const MessageRegex = /^\/price (\d{1,3}) (am|pm) (monday|tuesday|wednesday|thursday|friday|saturday)$/;
+const MessageRegex = /^\/turnip-price (\d{1,3}) (am|pm) (monday|tuesday|wednesday|thursday|friday|saturday)$/;
 
 export const isTurnipPriceMessage = (messageContent: string): boolean => {
     return MessageRegex.test(messageContent);

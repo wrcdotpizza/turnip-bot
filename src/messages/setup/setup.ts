@@ -3,6 +3,7 @@ import { User } from '../../entity/user';
 import { Message } from 'discord.js';
 import { Repository } from 'typeorm';
 import { getEnumValues } from '../../helpers/get-enum-values';
+import { Help } from '../../commands/help';
 
 enum WelcomeMessages {
     islandPurchase = 'islandPurchase',
@@ -112,6 +113,8 @@ export async function continueWelcomeQuestions(
                 redis.unlink(lastMessageKeyForUser(user)),
                 redis.unlink(welcomeKeyForUser(user)),
             ]);
+            const help = new Help();
+            await help.execute(msg, user);
             break;
         default:
             console.error(`Unkown last question type ${lastQuestion}`);

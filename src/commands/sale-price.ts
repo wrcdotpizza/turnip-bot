@@ -7,7 +7,7 @@ import { parseSalePriceMessage, isSalePriceMessage } from '../messages/sale-pric
 import { Command } from './command';
 
 export class SalePrice implements Command {
-    public static command = '/sale';
+    public static command = '/turnip-sale';
     private turnipWeekRepository: Repository<TurnipWeek>;
 
     constructor(_: Redis, private connection: Connection) {
@@ -30,6 +30,6 @@ export class SalePrice implements Command {
         turnipWeek.user = user;
         await this.turnipWeekRepository.save(turnipWeek);
 
-        await message.react('👍');
+        await message.react('✅');
     }
 }

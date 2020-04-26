@@ -15,7 +15,7 @@ const PATTERN = {
 };
 
 export class PredictPrice implements Command {
-    public static command = '/predict';
+    public static command = '/turnip-predict';
     private turnipWeekRepository: Repository<TurnipWeek>;
     private turnipPriceRepository: Repository<TurnipPrice>;
 
