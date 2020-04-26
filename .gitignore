@@ -1,0 +1,7 @@
+node_modules/
+dist/
+src/config/
+yarn-error.log
+pgdata
+.DS_Store
+.env

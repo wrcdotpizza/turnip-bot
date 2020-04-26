@@ -1,0 +1,28 @@
+name: Build Docker Image
+on:
+  push:
+    branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:  
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+      with:
+        node-version: 12
+
+    - name: Get release version
+      id: get_version
+      run: echo ::set-env name=RELEASE_VERSION::$(git log -1 --pretty=%h)
+    
+    - name: Build and publish docker image
+      uses: elgohr/Publish-Docker-Github-Action@master
+      with:
+        name: gunnarholwerda/turnip-bot/discord-bot
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        registry: docker.pkg.github.com
+        tags: "latest,${{ env.RELEASE_VERSION }}"
+        buildoptions: "--target prod"

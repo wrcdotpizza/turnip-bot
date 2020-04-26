@@ -1,0 +1,4 @@
+version: "3.3"
+services:
+  bot:
+    image: docker.pkg.github.com/gunnarholwerda/turnip-bot/discord-bot:54ddb5e

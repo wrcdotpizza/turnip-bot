@@ -1,0 +1,30 @@
+version: "3.3"
+services:
+  cache:
+    container_name: turnip-redis
+    image: redis:5
+    restart: always
+    ports: 
+      - "6379:6379"
+  db:
+    container_name: turnip-postgres
+    image: postgres:11.5
+    restart: always
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+      - ./db/init-db-and-user.sql:/docker-entrypoint-initdb.d/init-db-and-user.sql
+    environment:
+      POSTGRES_DB: turnip-tracker
+      PGDATA: /var/lib/postgresql/data/pgdata
+  bot:
+    container_name: turnip-bot
+    depends_on:
+      - cache
+      - db
+    restart: always
+    environment:
+        REDIS_HOST: cache
+        TYPEORM_HOST: db
+        DISCORD_TOKEN: ${DISCORD_TOKEN}
