@@ -10,6 +10,7 @@ import { SalePrice } from './commands/sale-price';
 import { Command } from './commands/command';
 import { PredictPrice } from './commands/predict-price';
 import { DiscordServer } from './entity/discord-server';
+import { Ping } from './commands/ping';
 dotenv.config();
 
 const getOrCreateUserForMessageAuthor = async (
@@ -60,6 +61,7 @@ const redis = new Redis({ host: process.env.REDIS_HOST, port: parseInt(process.e
         [StorePrice.command]: new StorePrice(redis, connection),
         [SalePrice.command]: new SalePrice(redis, connection),
         [PredictPrice.command]: new PredictPrice(connection),
+        [Ping.command]: new Ping()
     };
 
     client.on('ready', () => {
