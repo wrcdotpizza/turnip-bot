@@ -1,4 +1,4 @@
-const MessageRegex = /^\/sale (\d{1,3})$/;
+const MessageRegex = /^\/turnip-sale (\d{1,3})$/;
 
 export const isSalePriceMessage = (messageContent: string): boolean => {
     return MessageRegex.test(messageContent);

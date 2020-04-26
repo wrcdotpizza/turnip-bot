@@ -1,6 +1,8 @@
 version: "3.4"
 services:
   bot:
-    build: ./
+    build: 
+      context: ./
+      target: dev
     volumes:
-      - './dist:/opt/app/dist'
+      - './dist:/opt/dist'

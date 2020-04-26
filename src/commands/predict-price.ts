@@ -3,8 +3,9 @@ import { Message } from 'discord.js';
 import { Connection, Repository } from 'typeorm';
 import { User } from '../entity/user';
 import { TurnipWeek } from '../entity/turnip-week';
-import { TurnipPrice } from '../entity/turnip-price';
+import { TurnipPrice, PriceDay, PriceWindow } from '../entity/turnip-price';
 import { PricePatterns } from '../messages/setup/setup';
+import { getEnumValues } from '../helpers/get-enum-values';
 
 const PATTERN = {
     FLUCTUATING: 0,
@@ -14,7 +15,7 @@ const PATTERN = {
 };
 
 export class PredictPrice implements Command {
-    public static command = '/predict';
+    public static command = '/turnip-predict';
     private turnipWeekRepository: Repository<TurnipWeek>;
     private turnipPriceRepository: Repository<TurnipPrice>;
 
@@ -30,29 +31,54 @@ export class PredictPrice implements Command {
 
     public async execute(message: Message, user: User): Promise<void> {
         const week = await this.turnipWeekRepository.findOne({ user, active: true });
-        if (!week) {
-            console.error('No active turnip week exists for user');
+        const prices = await this.getPricesForWeek(week);
+
+        if (prices.length === 0) {
+            await message.reply("You haven\'t reported any prices, so I am unable to help predict.\n Report a price with the \"/price\" command");
             return;
         }
-        const prices = await this.getPricesForWeek(week);
-        const islandPrice = week.islandPrice;
+        const islandPrice = week ? week.islandPrice : undefined;
+
         const previousPattern = this.getPatternForPrediction(user.previousPattern!);
         const hasPurchasedTurnips = user.hasPurchasedTurnipsOnIsland;
-        const priceString = [islandPrice, ...prices.map(p => p.price)].join('.');
+        const priceString = this.buildPriceString(islandPrice, prices);
         await message.reply(
             `Visit this site to see your prediction for the week: \nhttps://turnipprophet.io?prices=${priceString}&first=${hasPurchasedTurnips}&pattern=${previousPattern}`,
         );
     }
+    private buildPriceString(islandPrice: number | undefined, prices: Array<TurnipPrice>): string {
+        const pricesByDay = prices.reduce((carry, price) => {
+            const priceDay = price.day!;
+            const priceWindow = price.priceWindow!;
+            if (!carry[priceDay]) {
+                carry[priceDay] = {};
+            }
+            carry[priceDay][priceWindow] = price.price!;
+            return carry;
+        }, {} as { [key in PriceDay]: { [key in PriceWindow]?: number } });
 
-    private async getPricesForWeek(week: TurnipWeek): Promise<Array<TurnipPrice>> {
-        const prices = await this.turnipPriceRepository
+        const priceArray = getEnumValues<number>(PriceDay, true).sort().reduce((prices, day) => {
+            const pricesForDay = pricesByDay[day as PriceDay];
+            const dayPrices = pricesForDay ? [pricesForDay[PriceWindow.am], pricesForDay[PriceWindow.pm]] : [undefined, undefined];
+            prices = [...prices, ...dayPrices];
+            return prices;
+        }, [] as Array<number | undefined>);
+
+        return [islandPrice, ...priceArray].join('.');
+    }
+
+    private async getPricesForWeek(week?: TurnipWeek): Promise<Array<TurnipPrice>> {
+        let prices = this.turnipPriceRepository
             .createQueryBuilder('price')
-            .innerJoinAndSelect('price.turnipWeek', 'week')
-            .where({ turnipWeekId: week.id })
-            .orderBy({ day: 'ASC', '"priceWindow"': 'ASC' })
-            .getMany();
+            .orderBy({ day: 'ASC', '"priceWindow"': 'ASC' });
 
-        return prices;
+        if (week) {
+            prices = prices.innerJoinAndSelect('price.turnipWeek', 'week').where({ turnipWeekId: week.id })
+        } else {
+            prices = prices.where(`"createdAt" >= date_trunc('week', now())`);
+        }
+
+        return await prices.getMany();
     }
 
     private getPatternForPrediction(previousPattern: PricePatterns): number {

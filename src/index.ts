@@ -11,6 +11,7 @@ import { Command } from './commands/command';
 import { PredictPrice } from './commands/predict-price';
 import { DiscordServer } from './entity/discord-server';
 import { Ping } from './commands/ping';
+import { Help } from './commands/help';
 dotenv.config();
 
 const getOrCreateUserForMessageAuthor = async (
@@ -75,7 +76,8 @@ const connectToDb = async (maxRetries: number = 10, currentRetryNumber: number =
         [StorePrice.command]: new StorePrice(redis, connection),
         [SalePrice.command]: new SalePrice(redis, connection),
         [PredictPrice.command]: new PredictPrice(connection),
-        [Ping.command]: new Ping()
+        [Ping.command]: new Ping(),
+        [Help.command]: new Help()
     };
 
     client.on('ready', () => {
@@ -107,7 +109,7 @@ const connectToDb = async (maxRetries: number = 10, currentRetryNumber: number =
             }
 
             if (/^(\/\w+)/.test(msg.content)) {
-                const command = /^(\/\w+)/.exec(msg.content)?.pop();
+                const command = /^(\/turnip-\w+)/.exec(msg.content)?.pop();
                 if (command && command in commands) {
                     const handler = commands[command];
                     console.log(`Detected command ${command}. Running validation`);

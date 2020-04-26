@@ -62,6 +62,6 @@ export class TurnipPrice {
     @CreateDateColumn()
     createdAt?: Date;
 
-    @ManyToOne(() => TurnipWeek, week => week.turnipPrices)
-    turnipWeek?: TurnipWeek;
+    @ManyToOne(() => TurnipWeek, week => week.turnipPrices, { nullable: true })
+    turnipWeek?: TurnipWeek | null;
 }
