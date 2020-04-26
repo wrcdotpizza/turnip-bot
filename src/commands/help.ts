@@ -20,7 +20,7 @@ Turnip Tracker help.
 **Get help**:
 - Command: \`/turnip-help\`
 - _See this message_
-`
+`;
 
 export class Help implements Command {
     public static command = '/turnip-help';
@@ -32,5 +32,4 @@ export class Help implements Command {
     public async execute(message: Message, _: User): Promise<void> {
         await message.author.send(HelpMessage);
     }
-
 }

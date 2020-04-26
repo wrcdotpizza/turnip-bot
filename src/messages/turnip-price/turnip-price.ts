@@ -7,9 +7,9 @@ export const isTurnipPriceMessage = (messageContent: string): boolean => {
 };
 
 export interface TurnipPriceMessageValues {
-    price: number,
-    priceWindow: PriceWindow,
-    day: PriceDay
+    price: number;
+    priceWindow: PriceWindow;
+    day: PriceDay;
 }
 
 export const parseTurnipMessage = (messageContent: string): TurnipPriceMessageValues => {

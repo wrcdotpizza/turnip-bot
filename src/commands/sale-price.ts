@@ -14,7 +14,7 @@ export class SalePrice implements Command {
         this.turnipWeekRepository = this.connection.getRepository(TurnipWeek);
     }
 
-    public validate(message: Message, _: User): Promise<boolean> {
+    public validate(message: Message, _user: User): Promise<boolean> {
         return new Promise(res => res(isSalePriceMessage(message.content)));
     }
 

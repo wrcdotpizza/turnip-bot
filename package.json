@@ -7,7 +7,7 @@
     "test": "jest",
     "build:watch": "npm run build -- --watch",
     "build": "rimraf dist/ && tsc --project tsconfig.json",
-    "lint": "eslint '**/*.{js,ts,tsx}' --quiet --fix",
+    "lint": "eslint '**/*.{ts,tsx}' --quiet --fix",
     "start": "node dist/index.js",
     "start:dev": "nodemon --inspect --watch dist dist/index.js",
     "env:local": "docker-compose -f docker-compose.yml -f dev-compose.yml up --build -d"

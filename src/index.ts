@@ -53,7 +53,7 @@ const getOrCreateDiscordServer = async (
 const client = new Client();
 const redis = new Redis({ host: process.env.REDIS_HOST, port: parseInt(process.env.REDIS_PORT || '6379') });
 
-const connectToDb = async (maxRetries: number = 10, currentRetryNumber: number = 0, timeout: number = 3000): Promise<Connection> => {
+const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 3000): Promise<Connection> => {
     if (currentRetryNumber > maxRetries) {
         throw new Error('Failed to connect to database in time');
     }
@@ -61,11 +61,11 @@ const connectToDb = async (maxRetries: number = 10, currentRetryNumber: number =
     try {
         return await createConnection();
     } catch (error) {
-        console.info('Failed to connect to database. Retrying...')
+        console.info('Failed to connect to database. Retrying...');
         await new Promise(res => setTimeout(res, timeout));
         return await connectToDb(maxRetries, currentRetryNumber++, timeout);
     }
-}
+};
 
 (async (): Promise<void> => {
     const connection = await connectToDb();
@@ -77,7 +77,7 @@ const connectToDb = async (maxRetries: number = 10, currentRetryNumber: number =
         [SalePrice.command]: new SalePrice(redis, connection),
         [PredictPrice.command]: new PredictPrice(connection),
         [Ping.command]: new Ping(),
-        [Help.command]: new Help()
+        [Help.command]: new Help(),
     };
 
     client.on('ready', () => {

@@ -40,6 +40,7 @@ function handleYesOrNoAnswer(messageText: string): YesOrNoResponse {
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function handleEnumAnswer<T>(messageText: string, answerEnum: any): T | null {
     messageText.trim();
     messageText.toLowerCase();

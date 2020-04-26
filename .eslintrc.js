@@ -14,4 +14,8 @@ module.exports = {
         "prettier/@typescript-eslint",
         "plugin:prettier/recommended"
     ],
+    rules: {
+        "no-unused-vars": ["error", { "vars": "all", "args": "after-used", "ignoreRestSiblings": false, "argsIgnorePattern": "^_" }],
+        "@typescript-eslint/no-non-null-assertion": 0
+    }
 };

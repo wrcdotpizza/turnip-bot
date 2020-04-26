@@ -26,7 +26,7 @@ export class PredictPrice implements Command {
         this.turnipPriceRepository = connection.getRepository(TurnipPrice);
     }
 
-    public validate(_: Message, _user: User): Promise<boolean> {
+    public validate(_message: Message, _user: User): Promise<boolean> {
         // Ensure they have an active turnip week
         return Promise.resolve(true);
     }
@@ -37,7 +37,9 @@ export class PredictPrice implements Command {
         const islandPrice = week ? week.islandPrice : undefined;
 
         if (prices.length === 0 && !islandPrice) {
-            await message.reply(`You haven\'t reported any prices, so I am unable to help predict.\n Report a price with the "${SalePrice.command}" or "${StorePrice.command} commands`);
+            await message.reply(
+                `You haven\'t reported any prices, so I am unable to help predict.\n Report a price with the "${SalePrice.command}" or "${StorePrice.command} commands`,
+            );
             return;
         }
 
@@ -59,12 +61,16 @@ export class PredictPrice implements Command {
             return carry;
         }, {} as { [key in PriceDay]: { [key in PriceWindow]?: number } });
 
-        const priceArray = getEnumValues<number>(PriceDay, true).sort().reduce((prices, day) => {
-            const pricesForDay = pricesByDay[day as PriceDay];
-            const dayPrices = pricesForDay ? [pricesForDay[PriceWindow.am], pricesForDay[PriceWindow.pm]] : [undefined, undefined];
-            prices = [...prices, ...dayPrices];
-            return prices;
-        }, [] as Array<number | undefined>);
+        const priceArray = getEnumValues<number>(PriceDay, true)
+            .sort()
+            .reduce((prices, day) => {
+                const pricesForDay = pricesByDay[day as PriceDay];
+                const dayPrices = pricesForDay
+                    ? [pricesForDay[PriceWindow.am], pricesForDay[PriceWindow.pm]]
+                    : [undefined, undefined];
+                prices = [...prices, ...dayPrices];
+                return prices;
+            }, [] as Array<number | undefined>);
 
         return [islandPrice, ...priceArray].join('.');
     }
@@ -75,7 +81,7 @@ export class PredictPrice implements Command {
             .orderBy({ day: 'ASC', '"priceWindow"': 'ASC' });
 
         if (week) {
-            prices = prices.innerJoinAndSelect('price.turnipWeek', 'week').where({ turnipWeekId: week.id })
+            prices = prices.innerJoinAndSelect('price.turnipWeek', 'week').where({ turnipWeekId: week.id });
         } else {
             prices = prices.where(`"createdAt" >= date_trunc('week', now())`);
         }
