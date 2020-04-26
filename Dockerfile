@@ -25,20 +25,18 @@ FROM base as basedev
 ENV NODE_ENV=development
 ENV PATH=/opt/node_modules/.bin:$PATH
 WORKDIR /opt
-COPY ./db/wait-for-db.sh .
-RUN apk add postgresql \
-    && chmod +x ./wait-for-db.sh \
-    && yarn install --production=false
-WORKDIR /opt/app
+RUN yarn install --production=false
 
 FROM basedev as compile
+WORKDIR /opt
 COPY . .
 RUN yarn run build
 
 FROM compile as dev
-CMD ["./wait-for-db.sh", "yarn", "start"]
+CMD ["yarn", "run", "start:dev"]
 
 FROM base as prod
 WORKDIR /opt
-COPY --from=compile /opt/app/dist /opt/app
+RUN mkdir /opt/dist
+COPY --from=compile /opt/dist /opt/dist
 CMD ["yarn", "start"]

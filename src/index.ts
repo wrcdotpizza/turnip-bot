@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import * as dotenv from 'dotenv';
 import { Client, User as Author, Message } from 'discord.js';
-import { createConnection, Repository } from 'typeorm';
+import { createConnection, Repository, Connection } from 'typeorm';
 import { User } from './entity/user';
 import Redis from 'ioredis';
 import { beginWelcomeConversation, isInWelcomeAndIsDm, continueWelcomeQuestions } from './messages/setup/setup';
@@ -52,8 +52,22 @@ const getOrCreateDiscordServer = async (
 const client = new Client();
 const redis = new Redis({ host: process.env.REDIS_HOST, port: parseInt(process.env.REDIS_PORT || '6379') });
 
+const connectToDb = async (maxRetries: number = 10, currentRetryNumber: number = 0, timeout: number = 3000): Promise<Connection> => {
+    if (currentRetryNumber > maxRetries) {
+        throw new Error('Failed to connect to database in time');
+    }
+
+    try {
+        return await createConnection();
+    } catch (error) {
+        console.info('Failed to connect to database. Retrying...')
+        await new Promise(res => setTimeout(res, timeout));
+        return await connectToDb(maxRetries, currentRetryNumber++, timeout);
+    }
+}
+
 (async (): Promise<void> => {
-    const connection = await createConnection();
+    const connection = await connectToDb();
     const userRepository = connection.getRepository(User);
     const serverRepository = connection.getRepository(DiscordServer);
 
