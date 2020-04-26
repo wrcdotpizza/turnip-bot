@@ -6,6 +6,8 @@ import { TurnipWeek } from '../entity/turnip-week';
 import { TurnipPrice, PriceDay, PriceWindow } from '../entity/turnip-price';
 import { PricePatterns } from '../messages/setup/setup';
 import { getEnumValues } from '../helpers/get-enum-values';
+import { SalePrice } from './sale-price';
+import { StorePrice } from './store-price';
 
 const PATTERN = {
     FLUCTUATING: 0,
@@ -32,12 +34,12 @@ export class PredictPrice implements Command {
     public async execute(message: Message, user: User): Promise<void> {
         const week = await this.turnipWeekRepository.findOne({ user, active: true });
         const prices = await this.getPricesForWeek(week);
+        const islandPrice = week ? week.islandPrice : undefined;
 
-        if (prices.length === 0) {
-            await message.reply("You haven\'t reported any prices, so I am unable to help predict.\n Report a price with the \"/price\" command");
+        if (prices.length === 0 && !islandPrice) {
+            await message.reply(`You haven\'t reported any prices, so I am unable to help predict.\n Report a price with the "${SalePrice.command}" or "${StorePrice.command} commands`);
             return;
         }
-        const islandPrice = week ? week.islandPrice : undefined;
 
         const previousPattern = this.getPatternForPrediction(user.previousPattern!);
         const hasPurchasedTurnips = user.hasPurchasedTurnipsOnIsland;
