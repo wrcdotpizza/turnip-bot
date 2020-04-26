@@ -2,7 +2,7 @@ import { Command } from './command';
 import { Message } from 'discord.js';
 import { User } from '../entity/user';
 
-const HelpMessage = `
+export const HelpMessage = `
 Turnip Tracker help.
 
 **Report your island's price**:
