@@ -13,7 +13,7 @@ export interface TurnipPriceMessageValues {
 }
 
 export const parseTurnipMessage = (messageContent: string): TurnipPriceMessageValues => {
-    const matches = MessageRegex.exec(messageContent);
+    const matches = MessageRegex.exec(messageContent.toLowerCase());
     if (matches === null) {
         throw new Error('Parsing turnip price message failed, this should not be possible');
     }

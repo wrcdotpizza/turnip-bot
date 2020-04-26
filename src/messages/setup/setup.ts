@@ -87,10 +87,11 @@ export async function continueWelcomeQuestions(
     userRepository: Repository<User>,
 ): Promise<void> {
     const lastQuestion = await redis.get(lastMessageKeyForUser(user));
+    const messageContent = msg.content.toLowerCase();
 
     switch (lastQuestion) {
         case WelcomeMessages.islandPurchase:
-            const islandPurchaseResponse = handleYesOrNoAnswer(msg.content);
+            const islandPurchaseResponse = handleYesOrNoAnswer(messageContent);
             if (islandPurchaseResponse === YesOrNoResponse.unknown) {
                 await msg.reply("Sorry, I don't know what that means");
                 return;
@@ -100,7 +101,7 @@ export async function continueWelcomeQuestions(
             await askForPreviousPattern(redis, user, msg);
             break;
         case WelcomeMessages.pattern:
-            const patternResponse = handleEnumAnswer<PricePatterns>(msg.content, PricePatterns);
+            const patternResponse = handleEnumAnswer<PricePatterns>(messageContent, PricePatterns);
             if (patternResponse === null) {
                 await msg.reply("Sorry, I don't know what that means");
                 return;
