@@ -22,12 +22,7 @@ export class StorePrice implements Command {
     }
 
     public async execute(message: Message, user: User): Promise<void> {
-        const week = await this.turnipWeekRepository
-            .createQueryBuilder('week')
-            .where({ userId: user.id })
-            .addOrderBy('"createdAt"', 'DESC')
-            .limit(1)
-            .getOne();
+        const week = await this.getCurrentTurnipWeek(user);
         if (!week) {
             await message.reply('If you want to predict your prices you need to report your sale price first.');
             return;
@@ -47,5 +42,14 @@ export class StorePrice implements Command {
         turnipPrice.day = day;
         await this.priceRepository.save(turnipPrice);
         await message.react('👍');
+    }
+
+    private getCurrentTurnipWeek(user: User): Promise<TurnipWeek | undefined> {
+        return this.turnipWeekRepository
+            .createQueryBuilder('week')
+            .where({ userId: user.id })
+            .addOrderBy('"createdAt"', 'DESC')
+            .limit(1)
+            .getOne();
     }
 }
