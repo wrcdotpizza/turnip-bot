@@ -1,4 +1,4 @@
-import { isSalePriceMessage } from './sale-price';
+import { isSalePriceMessage, parseSalePriceMessage } from './sale-price';
 
 describe('Daisy Mae Price Message', () => {
     it.each`
@@ -18,4 +18,21 @@ describe('Daisy Mae Price Message', () => {
     `("isSalePriceMessage('$messageContent') should return $result", ({ messageContent, result }) => {
         expect(isSalePriceMessage(messageContent)).toBe(result);
     });
+
+    it.each`
+        messageContent        | result
+        ${'/turnip-sale 120'} | ${{ price: 120 }}
+        ${'/turnip-sale 100'} | ${{ price: 100 }}
+        ${'/turnip-sale 1'}   | ${{ price: 1 }}
+        ${'/turnip-sale 10'}  | ${{ price: 10 }}
+    `("parseSalePriceMessage('$messageContent') should return $result", ({ messageContent, result }) => {
+        expect(parseSalePriceMessage(messageContent)).toEqual(result);
+    });
+
+    it.each(['/turnip-sale', '/turnip-sale banana', '/turnip-sale 1a', 'sale price'])(
+        "parseSalePriceMessage('$messageContent') should throw Error",
+        messageContent => {
+            expect(() => parseSalePriceMessage(messageContent)).toThrow();
+        },
+    );
 });
