@@ -32,6 +32,7 @@ RUN apk add postgresql \
 WORKDIR /opt/app
 
 FROM basedev as compile
+WORKDIR /opt
 COPY . .
 RUN yarn run build
 
@@ -40,5 +41,6 @@ CMD ["./wait-for-db.sh", "yarn", "start"]
 
 FROM base as prod
 WORKDIR /opt
-COPY --from=compile /opt/app/dist /opt/app
+RUN mkdir /opt/dist
+COPY --from=compile /opt/dist /opt/dist
 CMD ["yarn", "start"]
