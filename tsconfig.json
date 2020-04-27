@@ -59,7 +59,8 @@
     "skipLibCheck": true
   },
   "include": [
-    "tests/**/*.spec.ts"
+    "tests/**/*.spec.ts",
+    "tests/**/*.ts"
   ],
   "files": [
     "src/index.ts"

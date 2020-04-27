@@ -15,7 +15,13 @@ export class SalePrice implements Command {
     }
 
     public validate(message: Message, _user: User): Promise<boolean> {
-        return new Promise(res => res(isSalePriceMessage(message.content)));
+        try {
+            const result = isSalePriceMessage(message.content);
+            return Promise.resolve(result);
+        } catch (err) {
+            console.error('Error occurred when parsing sale price message', err);
+            return Promise.resolve(false);
+        }
     }
 
     public async execute(message: Message, user: User): Promise<void> {
