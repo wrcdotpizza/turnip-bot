@@ -2,7 +2,11 @@ import { Message } from 'discord.js';
 import { Redis } from 'ioredis';
 import { Connection, Repository } from 'typeorm';
 import { TurnipPrice } from '../entity/turnip-price';
-import { parseTurnipMessage, isTurnipPriceMessage, TurnipPriceMessageValues } from '../messages/turnip-price/turnip-price';
+import {
+    parseTurnipMessage,
+    isTurnipPriceMessage,
+    TurnipPriceMessageValues,
+} from '../messages/turnip-price/turnip-price';
 import { User } from '../entity/user';
 import { TurnipWeek } from '../entity/turnip-week';
 import { Command } from './command';
@@ -24,7 +28,11 @@ export class StorePrice implements Command {
     public async execute(message: Message, user: User): Promise<void> {
         const week = await this.getCurrentTurnipWeek(user);
         const values = parseTurnipMessage(message.content);
-        const existingPrice = await this.priceRepository.findOne({ turnipWeek: week, day: values.day, priceWindow: values.priceWindow });
+        const existingPrice = await this.priceRepository.findOne({
+            turnipWeek: week,
+            day: values.day,
+            priceWindow: values.priceWindow,
+        });
         if (existingPrice) {
             await message.reply('You have already submitted a price this week for that window.');
             return;
@@ -37,7 +45,7 @@ export class StorePrice implements Command {
     private getCurrentTurnipWeek(user: User): Promise<TurnipWeek | undefined> {
         return this.turnipWeekRepository
             .createQueryBuilder('week')
-            .where({ userId: user.id })
+            .where('"userId" = :id', { id: user.id })
             .addOrderBy('"createdAt"', 'DESC')
             .limit(1)
             .getOne();
