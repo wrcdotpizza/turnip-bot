@@ -16,6 +16,9 @@ jobs:
       
     - name: Setup environment
       run: yarn install
+
+    - name: Lint project
+      run: yarn run lint
     
     - name: Build project
       run: yarn run build
