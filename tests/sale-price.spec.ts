@@ -1,4 +1,4 @@
-import { isSalePriceMessage, parseSalePriceMessage } from './sale-price';
+import { isSalePriceMessage, parseSalePriceMessage } from '../src/messages/sale-price/sale-price';
 
 describe('Daisy Mae Price Message', () => {
     it.each`

@@ -1,5 +1,5 @@
-import { isTurnipPriceMessage, parseTurnipMessage } from './turnip-price';
-import { PriceWindow, PriceDay } from '../../entity/turnip-price';
+import { isTurnipPriceMessage, parseTurnipMessage } from '../src/messages/turnip-price/turnip-price';
+import { PriceWindow, PriceDay } from '../src/entity/turnip-price';
 
 describe('Turnip Price Message', () => {
     it.each`

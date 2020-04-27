@@ -30,7 +30,7 @@ RUN yarn install --production=false
 FROM basedev as compile
 WORKDIR /opt
 COPY . .
-RUN yarn run build
+RUN yarn run build:prod
 
 FROM compile as dev
 CMD ["yarn", "run", "start:dev"]

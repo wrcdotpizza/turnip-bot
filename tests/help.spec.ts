@@ -1,7 +1,7 @@
-import { User } from '../entity/user';
+import { User } from '../src/entity/user';
 import { Message, User as DiscordUser } from 'discord.js';
 import { mock, verify, instance } from 'ts-mockito';
-import { Help, HelpMessage } from './help';
+import { Help, HelpMessage } from '../src/commands/help';
 
 describe('Help command', () => {
     let user: User;
@@ -21,7 +21,7 @@ describe('Help command', () => {
         expect(await helpCommand.validate(message, user)).toBe(true);
     });
 
-    it('should respond to message with help text', async () => {
+    it('should dm author of message with help text', async () => {
         await helpCommand.execute(message, user);
         verify(mockAuthor.send(HelpMessage)).once();
     });
