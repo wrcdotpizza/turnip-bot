@@ -7,7 +7,7 @@ import { PredictPrice, PATTERN } from '../src/commands/predict-price';
 import UrlParser from 'url-parse';
 import { TurnipPrice, PriceWindow, PriceDay } from '../src/entity/turnip-price';
 import { addMockRepository, MockRepository } from './helpers/get-mock-repository';
-import { PricePatterns } from '../src/messages/setup/setup';
+import { PricePatterns } from '../src/messages/welcome/welcome';
 import { getMockTurnipPrice } from './helpers/get-mock-turnip-price';
 
 const UrlRegex = /(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))/;

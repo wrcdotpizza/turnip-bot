@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToMany, JoinTable } from 'typeorm';
 import { TurnipWeek } from './turnip-week';
-import { PricePatterns } from '../messages/setup/setup';
+import { PricePatterns } from '../messages/welcome/welcome';
 import { DiscordServer } from './discord-server';
 
 @Entity()

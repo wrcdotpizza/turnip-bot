@@ -4,7 +4,7 @@ import { Connection, Repository } from 'typeorm';
 import { User } from '../entity/user';
 import { TurnipWeek } from '../entity/turnip-week';
 import { TurnipPrice, PriceDay, PriceWindow } from '../entity/turnip-price';
-import { PricePatterns } from '../messages/setup/setup';
+import { PricePatterns } from '../messages/welcome/welcome';
 import { getEnumValues } from '../helpers/get-enum-values';
 import { SalePrice } from './sale-price';
 import { StorePrice } from './store-price';
