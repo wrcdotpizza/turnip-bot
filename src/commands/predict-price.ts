@@ -81,7 +81,9 @@ export class PredictPrice implements Command {
             .orderBy({ day: 'ASC', '"priceWindow"': 'ASC' });
 
         if (week) {
-            prices = prices.innerJoinAndSelect('price.turnipWeek', 'week').where({ turnipWeekId: week.id });
+            prices = prices
+                .innerJoinAndSelect('price.turnipWeek', 'week')
+                .where('"turnipWeekId" = :id', { id: week.id });
         } else {
             prices = prices.where(`"createdAt" >= date_trunc('week', now())`);
         }
