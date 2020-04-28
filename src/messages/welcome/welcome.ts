@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { getEnumValues } from '../../helpers/get-enum-values';
 import { Help } from '../../commands/help';
 
-enum WelcomeMessages {
+export enum WelcomeMessages {
     islandPurchase = 'islandPurchase',
     pattern = 'pattern',
 }
@@ -40,6 +40,7 @@ function handleYesOrNoAnswer(messageText: string): YesOrNoResponse {
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function handleEnumAnswer<T>(messageText: string, answerEnum: any): T | null {
     messageText.trim();
     messageText.toLowerCase();
@@ -66,7 +67,12 @@ export async function isInWelcomeAndIsDm(redis: Redis.Redis, user: User, msg: Me
         return false;
     }
     const welcomeKeyValue = await redis.get(welcomeKeyForUser(user));
-    if (welcomeKeyValue === null || parseInt(welcomeKeyValue) === 0) {
+    if (
+        !welcomeKeyValue ||
+        parseInt(welcomeKeyValue) === 0 ||
+        welcomeKeyValue === 'undefined' ||
+        welcomeKeyValue === 'null'
+    ) {
         return false;
     }
     return true;
@@ -87,10 +93,11 @@ export async function continueWelcomeQuestions(
     userRepository: Repository<User>,
 ): Promise<void> {
     const lastQuestion = await redis.get(lastMessageKeyForUser(user));
+    const messageContent = msg.content.toLowerCase();
 
     switch (lastQuestion) {
         case WelcomeMessages.islandPurchase:
-            const islandPurchaseResponse = handleYesOrNoAnswer(msg.content);
+            const islandPurchaseResponse = handleYesOrNoAnswer(messageContent);
             if (islandPurchaseResponse === YesOrNoResponse.unknown) {
                 await msg.reply("Sorry, I don't know what that means");
                 return;
@@ -100,7 +107,7 @@ export async function continueWelcomeQuestions(
             await askForPreviousPattern(redis, user, msg);
             break;
         case WelcomeMessages.pattern:
-            const patternResponse = handleEnumAnswer<PricePatterns>(msg.content, PricePatterns);
+            const patternResponse = handleEnumAnswer<PricePatterns>(messageContent, PricePatterns);
             if (patternResponse === null) {
                 await msg.reply("Sorry, I don't know what that means");
                 return;

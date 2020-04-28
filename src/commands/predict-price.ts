@@ -4,10 +4,12 @@ import { Connection, Repository } from 'typeorm';
 import { User } from '../entity/user';
 import { TurnipWeek } from '../entity/turnip-week';
 import { TurnipPrice, PriceDay, PriceWindow } from '../entity/turnip-price';
-import { PricePatterns } from '../messages/setup/setup';
+import { PricePatterns } from '../messages/welcome/welcome';
 import { getEnumValues } from '../helpers/get-enum-values';
+import { SalePrice } from './sale-price';
+import { StorePrice } from './store-price';
 
-const PATTERN = {
+export const PATTERN = {
     FLUCTUATING: 0,
     LARGE_SPIKE: 1,
     DECREASING: 2,
@@ -24,7 +26,7 @@ export class PredictPrice implements Command {
         this.turnipPriceRepository = connection.getRepository(TurnipPrice);
     }
 
-    public validate(_: Message, _user: User): Promise<boolean> {
+    public validate(_message: Message, _user: User): Promise<boolean> {
         // Ensure they have an active turnip week
         return Promise.resolve(true);
     }
@@ -32,18 +34,20 @@ export class PredictPrice implements Command {
     public async execute(message: Message, user: User): Promise<void> {
         const week = await this.turnipWeekRepository.findOne({ user, active: true });
         const prices = await this.getPricesForWeek(week);
-
-        if (prices.length === 0) {
-            await message.reply("You haven\'t reported any prices, so I am unable to help predict.\n Report a price with the \"/price\" command");
-            return;
-        }
         const islandPrice = week ? week.islandPrice : undefined;
 
-        const previousPattern = this.getPatternForPrediction(user.previousPattern!);
+        if (prices.length === 0 && !islandPrice) {
+            await message.reply(
+                `You haven\'t reported any prices, so I am unable to help predict.\n Report a price with the "${SalePrice.command}" or "${StorePrice.command} commands`,
+            );
+            return;
+        }
+
+        const previousPattern = this.getPatternForPrediction(user.previousPattern);
         const hasPurchasedTurnips = user.hasPurchasedTurnipsOnIsland;
         const priceString = this.buildPriceString(islandPrice, prices);
         await message.reply(
-            `Visit this site to see your prediction for the week: \nhttps://turnipprophet.io?prices=${priceString}&first=${hasPurchasedTurnips}&pattern=${previousPattern}`,
+            `Visit this site to see your prediction for the week: \nhttps://turnipprophet.io?prices=${priceString}&first=${!hasPurchasedTurnips}&pattern=${previousPattern}`,
         );
     }
     private buildPriceString(islandPrice: number | undefined, prices: Array<TurnipPrice>): string {
@@ -57,12 +61,16 @@ export class PredictPrice implements Command {
             return carry;
         }, {} as { [key in PriceDay]: { [key in PriceWindow]?: number } });
 
-        const priceArray = getEnumValues<number>(PriceDay, true).sort().reduce((prices, day) => {
-            const pricesForDay = pricesByDay[day as PriceDay];
-            const dayPrices = pricesForDay ? [pricesForDay[PriceWindow.am], pricesForDay[PriceWindow.pm]] : [undefined, undefined];
-            prices = [...prices, ...dayPrices];
-            return prices;
-        }, [] as Array<number | undefined>);
+        const priceArray = getEnumValues<number>(PriceDay, true)
+            .sort()
+            .reduce((prices, day) => {
+                const pricesForDay = pricesByDay[day as PriceDay];
+                const dayPrices = pricesForDay
+                    ? [pricesForDay[PriceWindow.am], pricesForDay[PriceWindow.pm]]
+                    : [undefined, undefined];
+                prices = [...prices, ...dayPrices];
+                return prices;
+            }, [] as Array<number | undefined>);
 
         return [islandPrice, ...priceArray].join('.');
     }
@@ -73,7 +81,9 @@ export class PredictPrice implements Command {
             .orderBy({ day: 'ASC', '"priceWindow"': 'ASC' });
 
         if (week) {
-            prices = prices.innerJoinAndSelect('price.turnipWeek', 'week').where({ turnipWeekId: week.id })
+            prices = prices
+                .innerJoinAndSelect('price.turnipWeek', 'week')
+                .where('"turnipWeekId" = :id', { id: week.id });
         } else {
             prices = prices.where(`"createdAt" >= date_trunc('week', now())`);
         }
@@ -81,7 +91,7 @@ export class PredictPrice implements Command {
         return await prices.getMany();
     }
 
-    private getPatternForPrediction(previousPattern: PricePatterns): number {
+    private getPatternForPrediction(previousPattern?: PricePatterns): number {
         if (previousPattern === PricePatterns.fluctuating) {
             return PATTERN.FLUCTUATING;
         } else if (previousPattern === PricePatterns.decreasing) {
