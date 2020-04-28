@@ -58,7 +58,6 @@ describe('SalePrice command', () => {
             await salePriceCommand.execute(message, user);
 
             verify(mockTurnipWeekRepository.save(anything())).once();
-            // eslint-disable-next-line @typescript-eslint/unbound-method
             const [savedWeek] = capture(mockTurnipWeekRepository.save).last();
             expect(savedWeek.active).toBe(undefined); // Leave active to the default on the column
             expect(savedWeek.user).toBe(user);

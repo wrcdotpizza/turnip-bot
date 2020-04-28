@@ -16,6 +16,7 @@ module.exports = {
     ],
     rules: {
         "@typescript-eslint/no-non-null-assertion": 0,
-        "@typescript-eslint/no-unused-vars": ["error", { "vars": "all", "args": "after-used", "ignoreRestSiblings": false, "argsIgnorePattern": "^_" }]
+        "@typescript-eslint/no-unused-vars": ["error", { "vars": "all", "args": "after-used", "ignoreRestSiblings": false, "argsIgnorePattern": "^_" }],
+        "@typescript-eslint/unbound-method": 0
     }
 };

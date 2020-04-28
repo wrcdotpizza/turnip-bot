@@ -19,6 +19,7 @@ export function addMockRepository<T>(mockConnection: Connection, repositoryType:
     when(mockQueryBuilder.orderBy(anything())).thenReturn(instance(mockQueryBuilder));
     when(mockQueryBuilder.where(anything())).thenReturn(instance(mockQueryBuilder));
     when(mockQueryBuilder.where(anything(), anything())).thenReturn(instance(mockQueryBuilder));
+    when(mockQueryBuilder.limit(anything())).thenReturn(instance(mockQueryBuilder));
     when(mockQueryBuilder.innerJoinAndSelect(anything(), anything())).thenReturn(instance(mockQueryBuilder));
 
     return {

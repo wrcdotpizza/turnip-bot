@@ -22,7 +22,6 @@ const getLinkFromMessage = (messageContent: string): UrlParser => {
 
 const getReplyMessage = (message: Message): string => {
     verify(message.reply(anyString())).once();
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     const [replyContent] = capture(message.reply).last();
     return replyContent as string;
 };
