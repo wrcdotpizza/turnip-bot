@@ -43,7 +43,7 @@ export class PredictPrice implements Command {
             return;
         }
 
-        const previousPattern = this.getPatternForPrediction(user.previousPattern!);
+        const previousPattern = this.getPatternForPrediction(user.previousPattern);
         const hasPurchasedTurnips = user.hasPurchasedTurnipsOnIsland;
         const priceString = this.buildPriceString(islandPrice, prices);
         await message.reply(
@@ -91,7 +91,7 @@ export class PredictPrice implements Command {
         return await prices.getMany();
     }
 
-    private getPatternForPrediction(previousPattern: PricePatterns): number {
+    private getPatternForPrediction(previousPattern?: PricePatterns): number {
         if (previousPattern === PricePatterns.fluctuating) {
             return PATTERN.FLUCTUATING;
         } else if (previousPattern === PricePatterns.decreasing) {

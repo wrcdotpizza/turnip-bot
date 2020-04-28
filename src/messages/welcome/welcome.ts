@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { getEnumValues } from '../../helpers/get-enum-values';
 import { Help } from '../../commands/help';
 
-enum WelcomeMessages {
+export enum WelcomeMessages {
     islandPurchase = 'islandPurchase',
     pattern = 'pattern',
 }
@@ -67,7 +67,12 @@ export async function isInWelcomeAndIsDm(redis: Redis.Redis, user: User, msg: Me
         return false;
     }
     const welcomeKeyValue = await redis.get(welcomeKeyForUser(user));
-    if (welcomeKeyValue === null || parseInt(welcomeKeyValue) === 0) {
+    if (
+        !welcomeKeyValue ||
+        parseInt(welcomeKeyValue) === 0 ||
+        welcomeKeyValue === 'undefined' ||
+        welcomeKeyValue === 'null'
+    ) {
         return false;
     }
     return true;

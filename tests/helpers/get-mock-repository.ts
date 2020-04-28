@@ -8,13 +8,9 @@ export interface MockRepository<T> {
     queryBuilder: SelectQueryBuilder<T>;
 }
 
-export function addMockRepository<T>(mockConnection: Connection, repositoryType: Constructor<T>): MockRepository<T> {
-    const mockRepository = mock(Repository);
-    const mockRepositoryInstance = instance(mockRepository);
-    when(mockConnection.getRepository(repositoryType)).thenReturn(mockRepositoryInstance);
-
+export function getMockRepository<T>(): MockRepository<T> {
+    const mockRepository: Repository<T> = mock(Repository);
     const mockQueryBuilder = mock(SelectQueryBuilder);
-
     when(mockRepository.createQueryBuilder(anyString())).thenReturn(instance(mockQueryBuilder));
     when(mockQueryBuilder.orderBy(anything())).thenReturn(instance(mockQueryBuilder));
     when(mockQueryBuilder.where(anything())).thenReturn(instance(mockQueryBuilder));
@@ -26,4 +22,10 @@ export function addMockRepository<T>(mockConnection: Connection, repositoryType:
         repository: mockRepository,
         queryBuilder: mockQueryBuilder,
     };
+}
+
+export function addMockRepository<T>(mockConnection: Connection, repositoryType: Constructor<T>): MockRepository<T> {
+    const mock = getMockRepository<T>();
+    when(mockConnection.getRepository(repositoryType)).thenReturn(instance(mock.repository));
+    return mock;
 }
