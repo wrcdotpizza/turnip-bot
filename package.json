@@ -29,6 +29,7 @@
     "@types/ioredis": "^4.14.9",
     "@types/jest": "^25.2.1",
     "@types/node": "^13.13.0",
+    "@types/url-parse": "^1.4.3",
     "@typescript-eslint/eslint-plugin": "^2.28.0",
     "@typescript-eslint/parser": "^2.28.0",
     "eslint": "^6.8.0",
@@ -43,7 +44,8 @@
     "rimraf": "^3.0.2",
     "ts-jest": "^25.4.0",
     "ts-mockito": "^2.5.0",
-    "typescript": "^3.8.3"
+    "typescript": "^3.8.3",
+    "url-parse": "^1.4.7"
   },
   "dependencies": {
     "discord.js": "^12.2.0",

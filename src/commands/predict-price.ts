@@ -9,7 +9,7 @@ import { getEnumValues } from '../helpers/get-enum-values';
 import { SalePrice } from './sale-price';
 import { StorePrice } from './store-price';
 
-const PATTERN = {
+export const PATTERN = {
     FLUCTUATING: 0,
     LARGE_SPIKE: 1,
     DECREASING: 2,
@@ -47,7 +47,7 @@ export class PredictPrice implements Command {
         const hasPurchasedTurnips = user.hasPurchasedTurnipsOnIsland;
         const priceString = this.buildPriceString(islandPrice, prices);
         await message.reply(
-            `Visit this site to see your prediction for the week: \nhttps://turnipprophet.io?prices=${priceString}&first=${hasPurchasedTurnips}&pattern=${previousPattern}`,
+            `Visit this site to see your prediction for the week: \nhttps://turnipprophet.io?prices=${priceString}&first=${!hasPurchasedTurnips}&pattern=${previousPattern}`,
         );
     }
     private buildPriceString(islandPrice: number | undefined, prices: Array<TurnipPrice>): string {
