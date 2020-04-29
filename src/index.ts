@@ -12,6 +12,7 @@ import { PredictPrice } from './commands/predict-price';
 import { DiscordServer } from './entity/discord-server';
 import { Ping } from './commands/ping';
 import { Help } from './commands/help';
+import { TurnipPattern } from './commands/turnip-pattern';
 dotenv.config();
 
 const getOrCreateUserForMessageAuthor = async (
@@ -78,6 +79,7 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
         [PredictPrice.command]: new PredictPrice(connection),
         [Ping.command]: new Ping(),
         [Help.command]: new Help(),
+        [TurnipPattern.command]: new TurnipPattern(connection),
     };
 
     client.on('ready', () => {
@@ -110,7 +112,7 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
 
             if (/^(\/\w+)/.test(msg.content)) {
                 const command = /^(\/turnip-\w+)/.exec(msg.content)?.pop();
-                msg.content = msg.content.toLowerCase();
+                msg.content = msg.content.toLowerCase().trim();
                 if (command && command in commands) {
                     const handler = commands[command];
                     console.log(`Detected command ${command}. Running validation`);
