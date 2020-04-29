@@ -4,7 +4,6 @@ import {
     beginWelcomeConversation,
     WelcomeMessages,
     continueWelcomeQuestions,
-    PricePatterns,
     isInWelcomeAndIsDm,
 } from '../src/messages/welcome/welcome';
 import { TextChannel } from 'discord.js';
@@ -13,6 +12,7 @@ import { verify, anything, instance, anyString } from 'ts-mockito';
 import { MockMessage, getMockMessage } from './helpers/get-mock-message';
 import { MockRepository, getMockRepository } from './helpers/get-mock-repository';
 import { Repository } from 'typeorm';
+import { PricePatterns } from '../src/types/price-patterns';
 
 describe('Welcome flow', () => {
     let mockRedis: Redis;

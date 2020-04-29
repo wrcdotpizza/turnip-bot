@@ -4,6 +4,7 @@ import { Message } from 'discord.js';
 import { Repository } from 'typeorm';
 import { getEnumValues } from '../../helpers/get-enum-values';
 import { Help } from '../../commands/help';
+import { PricePatterns } from '../../types/price-patterns';
 
 export enum WelcomeMessages {
     islandPurchase = 'islandPurchase',
@@ -14,14 +15,6 @@ enum YesOrNoResponse {
     yes,
     no,
     unknown,
-}
-
-export enum PricePatterns {
-    fluctuating = 'fluctuating',
-    decreasing = 'decreasing',
-    largeSpike = 'large spike',
-    smallSpike = 'small spike',
-    unknown = 'unknown',
 }
 
 const welcomeKeyForUser = (user: User): string => `welcome:${user.id}`;

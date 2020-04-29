@@ -1,5 +1,5 @@
 import { TurnipPrice, PriceDay, PriceWindow } from '../../entity/turnip-price';
-import { PricePatterns } from '../../messages/welcome/welcome';
+import { PricePatterns } from '../../types/price-patterns';
 import { getEnumValues } from '../../helpers/get-enum-values';
 
 export const PATTERN = {

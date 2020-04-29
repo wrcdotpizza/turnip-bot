@@ -1,8 +1,8 @@
 import { PredictionLinkBuilder, PATTERN } from '../src/commands/models/prediction-link-builder';
 import { getMockTurnipPrice } from './helpers/get-mock-turnip-price';
 import { PriceWindow, PriceDay, TurnipPrice } from '../src/entity/turnip-price';
-import { PricePatterns } from '../src/messages/welcome/welcome';
 import { Parse } from './helpers/parse';
+import { PricePatterns } from '../src/types/price-patterns';
 
 describe('PredictionLinkBuilder', () => {
     let linkBuilder: PredictionLinkBuilder;

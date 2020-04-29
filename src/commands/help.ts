@@ -1,6 +1,8 @@
 import { Command } from './command';
 import { Message } from 'discord.js';
 import { User } from '../entity/user';
+import { getEnumValues } from '../helpers/get-enum-values';
+import { PricePatterns } from '../types/price-patterns';
 
 export const HelpMessage = `
 Turnip Tracker help.
@@ -13,9 +15,15 @@ Turnip Tracker help.
 - Command: \`/turnip-sale <turnip_price>\`
 - _Ex: /turnip-sale 85 (This mean's Daisy Mae is selling turnips for 85 bells on **YOUR** island)_
 
-**Get your price prediction**:
+**Get price prediction**:
 - Command: \`/turnip-predict\`
 - _You will be returned a link to https://turnipprophet.io, showing you your price pattern prediction for the week._
+- Command: \`/turnip-predict @<user>\`
+- _You will be returned a link to https://turnipprophet.io, showing you the price pattern prediction for the mentioned user._
+
+**Update your previous pattern**:
+- Command: \`/turnip-pattern <${getEnumValues(PricePatterns).join(' or ')}>\`
+- _This will update your stored previous pattern to the specified pattern. This ensures you get the most accurate predictions from the prophet_
 
 **Get help**:
 - Command: \`/turnip-help\`

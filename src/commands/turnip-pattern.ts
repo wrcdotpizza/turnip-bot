@@ -2,7 +2,7 @@ import { Command } from './command';
 import { Message } from 'discord.js';
 import { User } from '../entity/user';
 import { getEnumValues } from '../helpers/get-enum-values';
-import { PricePatterns } from '../messages/welcome/welcome';
+import { PricePatterns } from '../types/price-patterns';
 import { Connection, Repository } from 'typeorm';
 
 export class TurnipPattern implements Command {

@@ -6,11 +6,11 @@ import { TurnipWeek } from '../src/entity/turnip-week';
 import { PredictPrice } from '../src/commands/predict-price';
 import { TurnipPrice, PriceWindow, PriceDay } from '../src/entity/turnip-price';
 import { addMockRepository, MockRepository } from './helpers/get-mock-repository';
-import { PricePatterns } from '../src/messages/welcome/welcome';
 import { getMockTurnipPrice } from './helpers/get-mock-turnip-price';
 import { PATTERN } from '../src/commands/models/prediction-link-builder';
 import { getReplyMessage } from './helpers/get-reply-message';
 import { Parse } from './helpers/parse';
+import { PricePatterns } from '../src/types/price-patterns';
 
 fdescribe('Predict command', () => {
     let user: User;
