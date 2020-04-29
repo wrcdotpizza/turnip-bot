@@ -12,10 +12,12 @@ export class PredictPrice implements Command {
     public static command = '/turnip-predict';
     private turnipWeekRepository: Repository<TurnipWeek>;
     private turnipPriceRepository: Repository<TurnipPrice>;
+    private userRepository: Repository<User>;
 
     constructor(connection: Connection) {
         this.turnipWeekRepository = connection.getRepository(TurnipWeek);
         this.turnipPriceRepository = connection.getRepository(TurnipPrice);
+        this.userRepository = connection.getRepository(User);
     }
 
     public validate(_message: Message, _user: User): Promise<boolean> {
@@ -24,7 +26,12 @@ export class PredictPrice implements Command {
     }
 
     public async execute(message: Message, user: User): Promise<void> {
-        const week = await this.turnipWeekRepository.findOne({ user, active: true });
+        const userForPrediction = await this.getUserForPrediction(message, user);
+        if (!userForPrediction) {
+            await message.reply("Sorry, I don't have any turnip market data for that user.");
+            return;
+        }
+        const week = await this.turnipWeekRepository.findOne({ user: userForPrediction, active: true });
         const prices = await this.getPricesForWeek(week);
         const islandPrice = week ? week.islandPrice : undefined;
 
@@ -42,6 +49,20 @@ export class PredictPrice implements Command {
         );
         const link = linkBuilder.buildLink();
         await message.reply(`Visit this site to see your prediction for the week: \n${link}`);
+    }
+
+    private async getUserForPrediction(message: Message, currentUser: User): Promise<User | null> {
+        const { mentions } = message;
+        if (mentions.users.size === 0) {
+            return currentUser;
+        }
+
+        const mentionedUser = mentions.users.first();
+        if (!mentionedUser) {
+            return currentUser;
+        }
+        const user = await this.userRepository.findOne({ discordId: mentionedUser.id });
+        return user ? user : null;
     }
 
     private async getPricesForWeek(week?: TurnipWeek): Promise<Array<TurnipPrice>> {

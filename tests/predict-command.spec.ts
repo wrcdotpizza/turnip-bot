@@ -1,6 +1,6 @@
 import { User } from '../src/entity/user';
-import { Message, User as DiscordUser } from 'discord.js';
-import { mock, instance, when, anything } from 'ts-mockito';
+import { Message, User as DiscordUser, Collection, MessageMentions } from 'discord.js';
+import { mock, instance, when, anything, deepEqual } from 'ts-mockito';
 import { Connection } from 'typeorm';
 import { TurnipWeek } from '../src/entity/turnip-week';
 import { PredictPrice } from '../src/commands/predict-price';
@@ -21,6 +21,7 @@ fdescribe('Predict command', () => {
     let predictCommand: PredictPrice;
     let mockTurnipWeekRepository: MockRepository<TurnipWeek>;
     let mockTurnipPriceRepository: MockRepository<TurnipPrice>;
+    let mockUserRepository: MockRepository<User>;
 
     beforeEach(() => {
         mockMessage = mock(Message);
@@ -31,6 +32,7 @@ fdescribe('Predict command', () => {
         mockConnection = mock(Connection);
         mockTurnipWeekRepository = addMockRepository(mockConnection, TurnipWeek);
         mockTurnipPriceRepository = addMockRepository(mockConnection, TurnipPrice);
+        mockUserRepository = addMockRepository(mockConnection, User);
         when(mockTurnipPriceRepository.queryBuilder.getMany()).thenResolve([new TurnipPrice()]);
         predictCommand = new PredictPrice(instance(mockConnection));
     });
@@ -49,6 +51,60 @@ fdescribe('Predict command', () => {
     describe('Command execution', () => {
         beforeEach(() => {
             message.content = '/turnip-predict';
+        });
+
+        describe('Mention functionality', () => {
+            const getMockDiscordUser = (): DiscordUser => instance(mock(DiscordUser));
+            it.only('should return prediction info for user that was mentioned', async () => {
+                const discordId = '9999';
+                const mockDiscordUser = getMockDiscordUser();
+                mockDiscordUser.id = discordId;
+                message.mentions = ({
+                    users: new Collection<string, DiscordUser>([[discordId, mockDiscordUser]]),
+                } as unknown) as MessageMentions;
+
+                const userForDiscordUser = new User();
+                user.previousPattern = PricePatterns.fluctuating;
+                user.hasPurchasedTurnipsOnIsland = true;
+                when(mockUserRepository.repository.findOne(deepEqual({ discordId }))).thenResolve(userForDiscordUser);
+                when(
+                    mockTurnipWeekRepository.repository.findOne(deepEqual({ user: userForDiscordUser, active: true })),
+                ).thenResolve(new TurnipWeek());
+                when(mockTurnipPriceRepository.queryBuilder.getMany()).thenResolve([new TurnipPrice()]);
+                await predictCommand.execute(message, user);
+
+                const messageReplyContent = getReplyMessage(mockMessage);
+                const predictUrl = Parse.getLinkFromMessage(messageReplyContent);
+                expect(predictUrl.query['pattern']).toBe(PATTERN.FLUCTUATING.toString());
+                expect(predictUrl.query['first']).toBe(false.toString());
+            });
+
+            it('should return prediction info for user of message if no mention is provided', async () => {
+                user.previousPattern = PricePatterns.largeSpike;
+                user.hasPurchasedTurnipsOnIsland = true;
+                when(mockTurnipWeekRepository.repository.findOne(anything())).thenResolve(new TurnipWeek());
+                when(mockTurnipPriceRepository.queryBuilder.getMany()).thenResolve([new TurnipPrice()]);
+                await predictCommand.execute(message, user);
+
+                const messageReplyContent = getReplyMessage(mockMessage);
+                const predictUrl = Parse.getLinkFromMessage(messageReplyContent);
+                expect(predictUrl.query['pattern']).toBe(PATTERN.LARGE_SPIKE.toString());
+                expect(predictUrl.query['first']).toBe(false.toString());
+            });
+
+            it('should reply with special message if mentioned user is not found', async () => {
+                const discordId = '9999';
+                const mockDiscordUser = getMockDiscordUser();
+                mockDiscordUser.id = discordId;
+                message.mentions = ({
+                    users: new Collection<string, DiscordUser>([[discordId, mockDiscordUser]]),
+                } as unknown) as MessageMentions;
+                when(mockUserRepository.repository.findOne(deepEqual({ discordId }))).thenResolve(undefined);
+                await predictCommand.execute(message, user);
+
+                const messageReplyContent = getReplyMessage(mockMessage);
+                expect(messageReplyContent).toBe("Sorry, I don't have any turnip market data for that user.");
+            });
         });
 
         describe('Prediction Url', () => {
