@@ -3,6 +3,6 @@ services:
   bot:
     build: 
       context: ./
-      target: prod
+      target: dev
     volumes:
       - './dist:/opt/dist'
