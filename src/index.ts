@@ -110,6 +110,7 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
 
             if (/^(\/\w+)/.test(msg.content)) {
                 const command = /^(\/turnip-\w+)/.exec(msg.content)?.pop();
+                msg.content = msg.content.toLowerCase();
                 if (command && command in commands) {
                     const handler = commands[command];
                     console.log(`Detected command ${command}. Running validation`);
