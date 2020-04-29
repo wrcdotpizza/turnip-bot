@@ -1,30 +1,16 @@
 import { User } from '../src/entity/user';
-import { Message, User as DiscordUser } from 'discord.js';
-import { mock, instance, when, capture, anyString, verify, anything } from 'ts-mockito';
+import { Message, User as DiscordUser, Collection, MessageMentions } from 'discord.js';
+import { mock, instance, when, anything, deepEqual } from 'ts-mockito';
 import { Connection } from 'typeorm';
 import { TurnipWeek } from '../src/entity/turnip-week';
-import { PredictPrice, PATTERN } from '../src/commands/predict-price';
-import UrlParser from 'url-parse';
+import { PredictPrice } from '../src/commands/predict-price';
 import { TurnipPrice, PriceWindow, PriceDay } from '../src/entity/turnip-price';
 import { addMockRepository, MockRepository } from './helpers/get-mock-repository';
-import { PricePatterns } from '../src/messages/welcome/welcome';
 import { getMockTurnipPrice } from './helpers/get-mock-turnip-price';
-
-const UrlRegex = /(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))/;
-
-const getLinkFromMessage = (messageContent: string): UrlParser => {
-    const url = UrlRegex.exec(messageContent);
-    if (url === null) {
-        fail('Could not find url in message');
-    }
-    return UrlParser(url[0], true);
-};
-
-const getReplyMessage = (message: Message): string => {
-    verify(message.reply(anyString())).once();
-    const [replyContent] = capture(message.reply).last();
-    return replyContent as string;
-};
+import { PATTERN } from '../src/commands/models/prediction-link-builder';
+import { getReplyMessage } from './helpers/get-reply-message';
+import { Parse } from './helpers/parse';
+import { PricePatterns } from '../src/types/price-patterns';
 
 fdescribe('Predict command', () => {
     let user: User;
@@ -35,6 +21,7 @@ fdescribe('Predict command', () => {
     let predictCommand: PredictPrice;
     let mockTurnipWeekRepository: MockRepository<TurnipWeek>;
     let mockTurnipPriceRepository: MockRepository<TurnipPrice>;
+    let mockUserRepository: MockRepository<User>;
 
     beforeEach(() => {
         mockMessage = mock(Message);
@@ -45,6 +32,7 @@ fdescribe('Predict command', () => {
         mockConnection = mock(Connection);
         mockTurnipWeekRepository = addMockRepository(mockConnection, TurnipWeek);
         mockTurnipPriceRepository = addMockRepository(mockConnection, TurnipPrice);
+        mockUserRepository = addMockRepository(mockConnection, User);
         when(mockTurnipPriceRepository.queryBuilder.getMany()).thenResolve([new TurnipPrice()]);
         predictCommand = new PredictPrice(instance(mockConnection));
     });
@@ -65,6 +53,60 @@ fdescribe('Predict command', () => {
             message.content = '/turnip-predict';
         });
 
+        describe('Mention functionality', () => {
+            const getMockDiscordUser = (): DiscordUser => instance(mock(DiscordUser));
+            it.only('should return prediction info for user that was mentioned', async () => {
+                const discordId = '9999';
+                const mockDiscordUser = getMockDiscordUser();
+                mockDiscordUser.id = discordId;
+                message.mentions = ({
+                    users: new Collection<string, DiscordUser>([[discordId, mockDiscordUser]]),
+                } as unknown) as MessageMentions;
+
+                const userForDiscordUser = new User();
+                user.previousPattern = PricePatterns.fluctuating;
+                user.hasPurchasedTurnipsOnIsland = true;
+                when(mockUserRepository.repository.findOne(deepEqual({ discordId }))).thenResolve(userForDiscordUser);
+                when(
+                    mockTurnipWeekRepository.repository.findOne(deepEqual({ user: userForDiscordUser, active: true })),
+                ).thenResolve(new TurnipWeek());
+                when(mockTurnipPriceRepository.queryBuilder.getMany()).thenResolve([new TurnipPrice()]);
+                await predictCommand.execute(message, user);
+
+                const messageReplyContent = getReplyMessage(mockMessage);
+                const predictUrl = Parse.getLinkFromMessage(messageReplyContent);
+                expect(predictUrl.query['pattern']).toBe(PATTERN.FLUCTUATING.toString());
+                expect(predictUrl.query['first']).toBe(false.toString());
+            });
+
+            it('should return prediction info for user of message if no mention is provided', async () => {
+                user.previousPattern = PricePatterns.largeSpike;
+                user.hasPurchasedTurnipsOnIsland = true;
+                when(mockTurnipWeekRepository.repository.findOne(anything())).thenResolve(new TurnipWeek());
+                when(mockTurnipPriceRepository.queryBuilder.getMany()).thenResolve([new TurnipPrice()]);
+                await predictCommand.execute(message, user);
+
+                const messageReplyContent = getReplyMessage(mockMessage);
+                const predictUrl = Parse.getLinkFromMessage(messageReplyContent);
+                expect(predictUrl.query['pattern']).toBe(PATTERN.LARGE_SPIKE.toString());
+                expect(predictUrl.query['first']).toBe(false.toString());
+            });
+
+            it('should reply with special message if mentioned user is not found', async () => {
+                const discordId = '9999';
+                const mockDiscordUser = getMockDiscordUser();
+                mockDiscordUser.id = discordId;
+                message.mentions = ({
+                    users: new Collection<string, DiscordUser>([[discordId, mockDiscordUser]]),
+                } as unknown) as MessageMentions;
+                when(mockUserRepository.repository.findOne(deepEqual({ discordId }))).thenResolve(undefined);
+                await predictCommand.execute(message, user);
+
+                const messageReplyContent = getReplyMessage(mockMessage);
+                expect(messageReplyContent).toBe("Sorry, I don't have any turnip market data for that user.");
+            });
+        });
+
         describe('Prediction Url', () => {
             describe('?first', () => {
                 beforeEach(() => {
@@ -78,7 +120,7 @@ fdescribe('Predict command', () => {
                     await predictCommand.execute(message, user);
 
                     const messageReplyContent = getReplyMessage(mockMessage);
-                    const predictUrl = getLinkFromMessage(messageReplyContent);
+                    const predictUrl = Parse.getLinkFromMessage(messageReplyContent);
                     expect(predictUrl.query['first']).toBe('false');
                 });
 
@@ -87,7 +129,7 @@ fdescribe('Predict command', () => {
                     await predictCommand.execute(message, user);
 
                     const messageReplyContent = getReplyMessage(mockMessage);
-                    const predictUrl = getLinkFromMessage(messageReplyContent);
+                    const predictUrl = Parse.getLinkFromMessage(messageReplyContent);
                     expect(predictUrl.query['first']).toBe('true');
                 });
             });
@@ -107,7 +149,7 @@ fdescribe('Predict command', () => {
                         await predictCommand.execute(message, user);
 
                         const messageReplyContent = getReplyMessage(mockMessage);
-                        const predictUrl = getLinkFromMessage(messageReplyContent);
+                        const predictUrl = Parse.getLinkFromMessage(messageReplyContent);
                         expect(predictUrl.query['pattern']).toBe(result.toString());
                     },
                 );
@@ -122,7 +164,7 @@ fdescribe('Predict command', () => {
                     when(mockTurnipWeekRepository.repository.findOne(anything())).thenResolve(turnipWeek);
                 });
 
-                it('should return the islandPrice first', async () => {
+                it('should include the islandPrice', async () => {
                     when(mockTurnipPriceRepository.queryBuilder.getMany()).thenResolve([
                         new TurnipPrice(),
                         new TurnipPrice(),
@@ -131,14 +173,14 @@ fdescribe('Predict command', () => {
                     await predictCommand.execute(message, user);
 
                     const messageReplyContent = getReplyMessage(mockMessage);
-                    const predictUrl = getLinkFromMessage(messageReplyContent);
+                    const predictUrl = Parse.getLinkFromMessage(messageReplyContent);
                     const parsedPrices = predictUrl.query['prices']?.split('.');
                     expect(parsedPrices && parsedPrices[0]).toBe(
                         turnipWeek.islandPrice && turnipWeek.islandPrice.toString(),
                     );
                 });
 
-                it('should place the prices in the correct order', async () => {
+                it('should build link for prices of the week', async () => {
                     const prices = [
                         getMockTurnipPrice(PriceWindow.am, PriceDay.monday),
                         getMockTurnipPrice(PriceWindow.pm, PriceDay.monday),
@@ -150,44 +192,8 @@ fdescribe('Predict command', () => {
                     await predictCommand.execute(message, user);
 
                     const messageReplyContent = getReplyMessage(mockMessage);
-                    const predictUrl = getLinkFromMessage(messageReplyContent);
-                    const parsedPrices = predictUrl.query['prices']?.split('.');
-                    expect(parsedPrices?.length).toBe(13);
-                    const expectedPrices = [turnipWeek.islandPrice, ...prices.map(p => p.price!)].map(i =>
-                        i?.toString(),
-                    );
-                    expect(parsedPrices?.slice(0, expectedPrices.length)).toEqual(expectedPrices);
-                });
-
-                it('should put empty prices for not included dates', async () => {
-                    const prices = [
-                        getMockTurnipPrice(PriceWindow.am, PriceDay.monday),
-                        getMockTurnipPrice(PriceWindow.pm, PriceDay.monday),
-                        getMockTurnipPrice(PriceWindow.am, PriceDay.tuesday),
-                        getMockTurnipPrice(PriceWindow.pm, PriceDay.friday),
-                        getMockTurnipPrice(PriceWindow.am, PriceDay.saturday),
-                    ];
-                    when(mockTurnipPriceRepository.queryBuilder.getMany()).thenResolve(prices);
-                    await predictCommand.execute(message, user);
-
-                    const messageReplyContent = getReplyMessage(mockMessage);
-                    const predictUrl = getLinkFromMessage(messageReplyContent);
-                    const expectedPrices = [
-                        turnipWeek.islandPrice,
-                        prices[0].price,
-                        prices[1].price,
-                        prices[2].price,
-                        undefined,
-                        undefined,
-                        undefined,
-                        undefined,
-                        undefined,
-                        undefined,
-                        prices[3].price,
-                        prices[4].price,
-                        undefined,
-                    ];
-                    expect(predictUrl.query['prices']).toEqual(expectedPrices.join('.'));
+                    const predictUrl = Parse.getLinkFromMessage(messageReplyContent);
+                    expect(predictUrl).toBeTruthy();
                 });
             });
 
@@ -208,28 +214,9 @@ fdescribe('Predict command', () => {
                     await predictCommand.execute(message, user);
 
                     const messageReplyContent = getReplyMessage(mockMessage);
-                    const predictUrl = getLinkFromMessage(messageReplyContent);
+                    const predictUrl = Parse.getLinkFromMessage(messageReplyContent);
                     const parsedPrices = predictUrl.query['prices']?.split('.');
                     expect(parsedPrices && parsedPrices[0]).toBe('');
-                });
-
-                it('should the prices in the correct position', async () => {
-                    const prices = [
-                        getMockTurnipPrice(PriceWindow.am, PriceDay.monday),
-                        getMockTurnipPrice(PriceWindow.pm, PriceDay.monday),
-                        getMockTurnipPrice(PriceWindow.am, PriceDay.tuesday),
-                        getMockTurnipPrice(PriceWindow.pm, PriceDay.tuesday),
-                        getMockTurnipPrice(PriceWindow.am, PriceDay.wednesday),
-                    ];
-                    when(mockTurnipPriceRepository.queryBuilder.getMany()).thenResolve(prices);
-                    await predictCommand.execute(message, user);
-
-                    const messageReplyContent = getReplyMessage(mockMessage);
-                    const predictUrl = getLinkFromMessage(messageReplyContent);
-                    const parsedPrices = predictUrl.query['prices']?.split('.');
-                    expect(parsedPrices?.length).toBe(13);
-                    const expectedPrices = ['', ...prices.map(p => p.price!)].map(i => i?.toString());
-                    expect(parsedPrices?.slice(0, expectedPrices.length)).toEqual(expectedPrices);
                 });
             });
         });

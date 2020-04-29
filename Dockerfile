@@ -33,6 +33,7 @@ COPY . .
 RUN yarn run build:prod
 
 FROM compile as dev
+COPY --from=compile /opt/dist /opt/dist
 CMD ["yarn", "run", "start:dev"]
 
 FROM base as prod
