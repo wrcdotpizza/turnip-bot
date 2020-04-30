@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import { Client, User as Author, Message } from 'discord.js';
 import { createConnection, Repository, Connection } from 'typeorm';
 import { User } from './entity/user';
-import { beginWelcomeConversation, isInWelcomeAndIsDm, continueWelcomeQuestions } from './messages/welcome/welcome';
+import { beginWelcomeConversation } from './messages/welcome/welcome';
 import { StorePrice } from './commands/store-price';
 import { SalePrice } from './commands/sale-price';
 import { Command } from './commands/command';
@@ -15,7 +15,7 @@ import { TurnipPattern } from './commands/turnip-pattern';
 import { getEventEmitter } from './global/event-emitter';
 import { getRedis } from './global/redis-store';
 import { buildMessageHandlers } from './messages/messages';
-import { lastMessageForUser } from './messages/message-helpers/last-message-for-user';
+import { PersonalMessageState } from './messages/message-helpers/personal-message-state';
 dotenv.config();
 
 const getOrCreateUserForMessageAuthor = async (
@@ -96,6 +96,7 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
             if (msg.author.bot) return;
 
             const { user, isNewUser } = await getOrCreateUserForMessageAuthor(userRepository, msg.author);
+            const personalMessageState = new PersonalMessageState(getRedis(), user);
             const server = await getOrCreateDiscordServer(serverRepository, msg);
 
             if (server) {
@@ -104,19 +105,21 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
             }
 
             if (isNewUser) {
-                await beginWelcomeConversation(getRedis(), user, msg);
+                await beginWelcomeConversation(personalMessageState, msg);
                 return;
             }
 
-            const lastMessage = await lastMessageForUser(user);
+            const lastMessage = await personalMessageState.getLastMessage();
             if (msg.channel.type === 'dm' && lastMessage !== null) {
-                const result = await messageHandlers[lastMessage]?.handler(connection, msg, user);
-                console.log('result', result);
-                return;
-            }
-
-            if (await isInWelcomeAndIsDm(getRedis(), user, msg)) {
-                await continueWelcomeQuestions(getRedis(), user, msg, userRepository);
+                const wasSuccess = await messageHandlers[lastMessage]?.handler(
+                    personalMessageState,
+                    connection,
+                    msg,
+                    user,
+                );
+                if (wasSuccess) {
+                    await personalMessageState.unsetLastMessage();
+                }
                 return;
             }
 

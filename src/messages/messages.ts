@@ -2,6 +2,7 @@ import fs from 'fs';
 import { Message } from 'discord.js';
 import { Connection } from 'typeorm';
 import { User } from '../entity/user';
+import { PersonalMessageState } from './message-helpers/personal-message-state';
 
 export enum Messages {
     welcomeIslandPurchase = 'islandPurchase',
@@ -11,7 +12,12 @@ export enum Messages {
 
 interface MessageHandler {
     message: Messages;
-    handler: (connection: Connection, message: Message, user: User) => Promise<boolean>;
+    handler: (
+        messageState: PersonalMessageState,
+        connection: Connection,
+        message: Message,
+        user: User,
+    ) => Promise<boolean>;
 }
 
 export type MessageKeys = Partial<Record<Messages, string>>;
