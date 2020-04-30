@@ -1,5 +1,4 @@
 import { Message } from 'discord.js';
-import { Redis } from 'ioredis';
 import { Connection, Repository } from 'typeorm';
 import { TurnipPrice } from '../entity/turnip-price';
 import {
@@ -16,13 +15,19 @@ export class StorePrice implements Command {
     private priceRepository: Repository<TurnipPrice>;
     private turnipWeekRepository: Repository<TurnipWeek>;
 
-    constructor(_: Redis, private connection: Connection) {
+    constructor(private connection: Connection) {
         this.priceRepository = this.connection.getRepository(TurnipPrice);
         this.turnipWeekRepository = this.connection.getRepository(TurnipWeek);
     }
 
     public async validate(message: Message, _: User): Promise<boolean> {
-        return Promise.resolve(isTurnipPriceMessage(message.content));
+        try {
+            const result = isTurnipPriceMessage(message.content);
+            return Promise.resolve(result);
+        } catch (err) {
+            console.error('Error occurred when parsing store price message', err);
+            return Promise.resolve(false);
+        }
     }
 
     public async execute(message: Message, user: User): Promise<void> {
@@ -46,7 +51,7 @@ export class StorePrice implements Command {
         return this.turnipWeekRepository
             .createQueryBuilder('week')
             .where('"userId" = :id', { id: user.id })
-            .addOrderBy('"createdAt"', 'DESC')
+            .orderBy('"createdAt"', 'DESC')
             .limit(1)
             .getOne();
     }

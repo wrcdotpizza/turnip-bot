@@ -5,11 +5,7 @@ import { Repository } from 'typeorm';
 import { getEnumValues } from '../../helpers/get-enum-values';
 import { Help } from '../../commands/help';
 import { PricePatterns } from '../../types/price-patterns';
-
-export enum WelcomeMessages {
-    islandPurchase = 'islandPurchase',
-    pattern = 'pattern',
-}
+import { Messages } from '../messages';
 
 enum YesOrNoResponse {
     yes,
@@ -52,7 +48,7 @@ export async function beginWelcomeConversation(redis: Redis.Redis, user: User, m
     await redis.set(welcomeKeyForUser(user), 1);
     await msg.author.send('Sounds like you want to start tracking your turnips. I have a few questions for you...');
     await msg.author.send('Have you purchased turnips on your island before?');
-    await redis.set(`welcome:${user.id}:last_message`, WelcomeMessages.islandPurchase);
+    await redis.set(`welcome:${user.id}:last_message`, Messages.welcomeIslandPurchase);
 }
 
 export async function isInWelcomeAndIsDm(redis: Redis.Redis, user: User, msg: Message): Promise<boolean> {
@@ -76,7 +72,7 @@ async function askForPreviousPattern(redis: Redis.Redis, user: User, msg: Messag
         `Thanks. What was your previous turnip price pattern? (fluctuating, large spike, decreasing, small spike)`,
     );
     await msg.author.send(`If you don't know, just answer "unknown".`);
-    await redis.set(lastMessageKeyForUser(user), WelcomeMessages.pattern);
+    await redis.set(lastMessageKeyForUser(user), Messages.welcomePattern);
 }
 
 export async function continueWelcomeQuestions(
@@ -89,7 +85,7 @@ export async function continueWelcomeQuestions(
     const messageContent = msg.content.toLowerCase();
 
     switch (lastQuestion) {
-        case WelcomeMessages.islandPurchase:
+        case Messages.welcomeIslandPurchase:
             const islandPurchaseResponse = handleYesOrNoAnswer(messageContent);
             if (islandPurchaseResponse === YesOrNoResponse.unknown) {
                 await msg.reply("Sorry, I don't know what that means");
@@ -99,7 +95,7 @@ export async function continueWelcomeQuestions(
             await userRepository.save(user);
             await askForPreviousPattern(redis, user, msg);
             break;
-        case WelcomeMessages.pattern:
+        case Messages.welcomePattern:
             const patternResponse = handleEnumAnswer<PricePatterns>(messageContent, PricePatterns);
             if (patternResponse === null) {
                 await msg.reply("Sorry, I don't know what that means");

@@ -3,7 +3,6 @@ import * as dotenv from 'dotenv';
 import { Client, User as Author, Message } from 'discord.js';
 import { createConnection, Repository, Connection } from 'typeorm';
 import { User } from './entity/user';
-import Redis from 'ioredis';
 import { beginWelcomeConversation, isInWelcomeAndIsDm, continueWelcomeQuestions } from './messages/welcome/welcome';
 import { StorePrice } from './commands/store-price';
 import { SalePrice } from './commands/sale-price';
@@ -13,6 +12,10 @@ import { DiscordServer } from './entity/discord-server';
 import { Ping } from './commands/ping';
 import { Help } from './commands/help';
 import { TurnipPattern } from './commands/turnip-pattern';
+import { getEventEmitter } from './global/event-emitter';
+import { getRedis } from './global/redis-store';
+import { buildMessageHandlers } from './messages/messages';
+import { lastMessageForUser } from './messages/message-helpers/last-message-for-user';
 dotenv.config();
 
 const getOrCreateUserForMessageAuthor = async (
@@ -52,7 +55,6 @@ const getOrCreateDiscordServer = async (
 };
 
 const client = new Client();
-const redis = new Redis({ host: process.env.REDIS_HOST, port: parseInt(process.env.REDIS_PORT || '6379') });
 
 const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 3000): Promise<Connection> => {
     if (currentRetryNumber > maxRetries) {
@@ -70,12 +72,13 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
 
 (async (): Promise<void> => {
     const connection = await connectToDb();
+    const messageHandlers = await buildMessageHandlers();
     const userRepository = connection.getRepository(User);
     const serverRepository = connection.getRepository(DiscordServer);
 
     const commands: { [key: string]: Command } = {
-        [StorePrice.command]: new StorePrice(redis, connection),
-        [SalePrice.command]: new SalePrice(redis, connection),
+        [StorePrice.command]: new StorePrice(connection),
+        [SalePrice.command]: new SalePrice(connection),
         [PredictPrice.command]: new PredictPrice(connection),
         [Ping.command]: new Ping(),
         [Help.command]: new Help(),
@@ -101,12 +104,19 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
             }
 
             if (isNewUser) {
-                await beginWelcomeConversation(redis, user, msg);
+                await beginWelcomeConversation(getRedis(), user, msg);
                 return;
             }
 
-            if (await isInWelcomeAndIsDm(redis, user, msg)) {
-                await continueWelcomeQuestions(redis, user, msg, userRepository);
+            const lastMessage = await lastMessageForUser(user);
+            if (msg.channel.type === 'dm' && lastMessage !== null) {
+                const result = await messageHandlers[lastMessage]?.handler(connection, msg, user);
+                console.log('result', result);
+                return;
+            }
+
+            if (await isInWelcomeAndIsDm(getRedis(), user, msg)) {
+                await continueWelcomeQuestions(getRedis(), user, msg, userRepository);
                 return;
             }
 
@@ -119,6 +129,7 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
                     if (await handler.validate(msg, user)) {
                         console.log(`Running ${command} handler for user ${user.id}`);
                         await handler.execute(msg, user);
+                        getEventEmitter().emit('postSalePrice', { msg, user });
                     }
                 }
             }

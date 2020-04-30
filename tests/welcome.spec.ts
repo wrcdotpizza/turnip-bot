@@ -2,7 +2,6 @@ import { Redis } from 'ioredis';
 import { GetMockRedisClient } from './helpers/redis-mock';
 import {
     beginWelcomeConversation,
-    WelcomeMessages,
     continueWelcomeQuestions,
     isInWelcomeAndIsDm,
 } from '../src/messages/welcome/welcome';
@@ -13,6 +12,7 @@ import { MockMessage, getMockMessage } from './helpers/get-mock-message';
 import { MockRepository, getMockRepository } from './helpers/get-mock-repository';
 import { Repository } from 'typeorm';
 import { PricePatterns } from '../src/types/price-patterns';
+import { Messages } from '../src/messages/messages';
 
 describe('Welcome flow', () => {
     let mockRedis: Redis;
@@ -34,7 +34,7 @@ describe('Welcome flow', () => {
 
         it('should set last_message to islandPurchase', async () => {
             await beginWelcomeConversation(mockRedis, user, message.instance);
-            expect(await mockRedis.get(`welcome:${user.id}:last_message`)).toBe(WelcomeMessages.islandPurchase);
+            expect(await mockRedis.get(`welcome:${user.id}:last_message`)).toBe(Messages.welcomeIslandPurchase);
         });
 
         it('should set welcome key for user', async () => {
@@ -79,7 +79,7 @@ describe('Welcome flow', () => {
 
         describe('Last message was "islandPurchase"', () => {
             beforeEach(async () => {
-                await mockRedis.set(`welcome:${user.id}:last_message`, WelcomeMessages.islandPurchase);
+                await mockRedis.set(`welcome:${user.id}:last_message`, Messages.welcomeIslandPurchase);
             });
 
             it.each(['yes', 'yup', 'yeah', 'yee', 'yea'])(
@@ -89,7 +89,7 @@ describe('Welcome flow', () => {
                     await continueWelcomeQuestions(mockRedis, user, message.instance, userRepoInstance);
                     expect(user.hasPurchasedTurnipsOnIsland).toBe(true);
                     verify(userRepo.repository.save(user)).once();
-                    expect(await mockRedis.get(`welcome:${user.id}:last_message`)).toBe(WelcomeMessages.pattern);
+                    expect(await mockRedis.get(`welcome:${user.id}:last_message`)).toBe(Messages.welcomePattern);
                 },
             );
 
@@ -100,7 +100,7 @@ describe('Welcome flow', () => {
                     await continueWelcomeQuestions(mockRedis, user, message.instance, userRepoInstance);
                     expect(user.hasPurchasedTurnipsOnIsland).toBe(false);
                     verify(userRepo.repository.save(user)).once();
-                    expect(await mockRedis.get(`welcome:${user.id}:last_message`)).toBe(WelcomeMessages.pattern);
+                    expect(await mockRedis.get(`welcome:${user.id}:last_message`)).toBe(Messages.welcomePattern);
                 },
             );
 
@@ -114,7 +114,7 @@ describe('Welcome flow', () => {
 
         describe('Last message was "pattern"', () => {
             beforeEach(async () => {
-                await mockRedis.set(`welcome:${user.id}:last_message`, WelcomeMessages.pattern);
+                await mockRedis.set(`welcome:${user.id}:last_message`, Messages.welcomePattern);
             });
 
             it.each`
