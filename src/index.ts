@@ -132,7 +132,7 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
                     if (await handler.validate(msg, user)) {
                         console.log(`Running ${command} handler for user ${user.id}`);
                         await handler.execute(msg, user);
-                        getEventEmitter().emit('postSalePrice', { msg, user });
+                        getEventEmitter().emit(`post ${command}`, { msg, user });
                     }
                 }
             }
@@ -146,6 +146,7 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
     const gracefulShutdown = (msg: string, callback: () => void): void => {
         console.log('Shutting down server for ' + msg);
         client.removeAllListeners();
+        getEventEmitter().removeAllListeners();
         callback();
         connection.close();
     };

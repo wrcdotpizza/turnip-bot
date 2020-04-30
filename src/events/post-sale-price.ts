@@ -4,6 +4,7 @@ import { getRedis } from '../global/redis-store';
 import { Messages } from '../messages/messages';
 import Redis from 'ioredis';
 import { withRedis } from '../helpers/with-redis';
+import { SalePrice } from '../commands/sale-price';
 
 const sendTurnipPurchaseReminder = withRedis(async (redis: Redis.Redis, { msg, user }: MessageEvent): Promise<void> => {
     if (user.hasPurchasedTurnipsOnIsland) {
@@ -15,4 +16,4 @@ const sendTurnipPurchaseReminder = withRedis(async (redis: Redis.Redis, { msg, u
     await redis.set(`${user.id}:last_message`, Messages.updateHasPurchased);
 }, getRedis());
 
-getEventEmitter().on('postSalePrice', sendTurnipPurchaseReminder);
+getEventEmitter().on(`post ${SalePrice.command}`, sendTurnipPurchaseReminder);
