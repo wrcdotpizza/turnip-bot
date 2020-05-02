@@ -12,7 +12,7 @@ export const sendTurnipPurchaseReminder = async ({
 }: PostCommandEvent): Promise<void> => {
     const turnipWeekRepo = connection.getRepository(TurnipWeek);
     const numTurnipWeeks = await turnipWeekRepo.count({ user });
-    if (user.hasPurchasedTurnipsOnIsland || numTurnipWeeks === 0) {
+    if (user.hasPurchasedTurnipsOnIsland || numTurnipWeeks <= 1) {
         return;
     }
     await msg.author.send(

@@ -35,11 +35,20 @@ describe('post /turnip-sale events', () => {
                 const mockConnection = mock(Connection);
                 connection = instance(mockConnection);
                 mockTurnipWeekRepo = addMockRepository(mockConnection, TurnipWeek);
+                when(mockTurnipWeekRepo.repository.count(deepEqual({ user }))).thenResolve(2);
             });
 
-            it('should do nothing if user has not reported a turnip price before', async () => {
+            it('should do nothing if user has no turnip week prices', async () => {
                 user.hasPurchasedTurnipsOnIsland = false;
                 when(mockTurnipWeekRepo.repository.count(deepEqual({ user }))).thenResolve(0);
+                await sendTurnipPurchaseReminder(getPostCommandEvent());
+                verify(mockMessage.mockAuthor.send(anyString())).never();
+                expect(await messageState.getLastMessage()).toEqual(null);
+            });
+
+            it('should do nothing if user has one turnip week price', async () => {
+                user.hasPurchasedTurnipsOnIsland = false;
+                when(mockTurnipWeekRepo.repository.count(deepEqual({ user }))).thenResolve(1);
                 await sendTurnipPurchaseReminder(getPostCommandEvent());
                 verify(mockMessage.mockAuthor.send(anyString())).never();
                 expect(await messageState.getLastMessage()).toEqual(null);
