@@ -98,7 +98,7 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
             if (msg.author.bot) return;
 
             const { user, isNewUser } = await getOrCreateUserForMessageAuthor(userRepository, msg.author);
-            const personalMessageState = new PersonalMessageState(getRedis(), user);
+            const messageState = new PersonalMessageState(getRedis(), user);
             const server = await getOrCreateDiscordServer(serverRepository, msg);
 
             if (server) {
@@ -107,13 +107,13 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
             }
 
             if (isNewUser) {
-                await beginWelcomeConversation(personalMessageState, msg);
+                await beginWelcomeConversation(messageState, msg);
                 return;
             }
 
-            const lastMessage = await personalMessageState.getLastMessage();
+            const lastMessage = await messageState.getLastMessage();
             if (msg.channel.type === 'dm' && lastMessage !== null) {
-                await messageHandlers[lastMessage]?.handler(personalMessageState, connection, msg, user);
+                await messageHandlers[lastMessage]?.handler(messageState, connection, msg, user);
                 return;
             }
 
@@ -126,7 +126,7 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
                     if (await handler.validate(msg, user)) {
                         console.log(`Running ${command} handler for user ${user.id}`);
                         await handler.execute(msg, user);
-                        getEventEmitter().emit(`post ${command}`, { msg, user });
+                        getEventEmitter().emit(`post ${command}`, { msg, user, connection, messageState });
                     }
                 }
             }

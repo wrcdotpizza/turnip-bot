@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { MessageEvent } from '../types/turnip-events';
+import { PostCommandEvent } from '../types/turnip-events';
 
 const eventEmitter = new EventEmitter();
 
@@ -10,8 +10,8 @@ const eventEmitter = new EventEmitter();
 // }
 
 interface MessageEventEmitter {
-    on(s: string, listener: (v: MessageEvent) => Promise<void> | void): this;
-    emit(s: string, arg: MessageEvent): boolean;
+    on(s: string, listener: (v: PostCommandEvent) => Promise<void> | void): this;
+    emit(s: string, arg: PostCommandEvent): boolean;
     removeAllListeners(): void;
 }
 

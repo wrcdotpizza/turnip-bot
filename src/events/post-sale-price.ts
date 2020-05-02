@@ -1,15 +1,18 @@
 import { getEventEmitter } from '../global/event-emitter';
-import { MessageEvent } from '../types/turnip-events';
-import { getRedis } from '../global/redis-store';
-import Redis from 'ioredis';
-import { withRedis } from '../helpers/with-redis';
+import { PostCommandEvent } from '../types/turnip-events';
 import { SalePrice } from '../commands/sale-price';
-import { PersonalMessageState } from '../messages/message-helpers/personal-message-state';
 import { Messages } from '../types/messages';
+import { TurnipWeek } from '../entity/turnip-week';
 
-export const reminderImplementation = async (redis: Redis.Redis, { msg, user }: MessageEvent): Promise<void> => {
-    const messageState = new PersonalMessageState(redis, user);
-    if (user.hasPurchasedTurnipsOnIsland) {
+export const sendTurnipPurchaseReminder = async ({
+    msg,
+    user,
+    messageState,
+    connection,
+}: PostCommandEvent): Promise<void> => {
+    const turnipWeekRepo = connection.getRepository(TurnipWeek);
+    const numTurnipWeeks = await turnipWeekRepo.count({ user });
+    if (user.hasPurchasedTurnipsOnIsland || numTurnipWeeks === 0) {
         return;
     }
     await msg.author.send(
@@ -17,8 +20,6 @@ export const reminderImplementation = async (redis: Redis.Redis, { msg, user }: 
     );
     await messageState.setLastMessage(Messages.updateHasPurchased);
 };
-
-export const sendTurnipPurchaseReminder = withRedis(reminderImplementation, getRedis());
 
 export function registerEvents(): void {
     getEventEmitter().on(`post ${SalePrice.command}`, sendTurnipPurchaseReminder);
