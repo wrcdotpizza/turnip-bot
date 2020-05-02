@@ -29,7 +29,7 @@ const handler: MessageHandler = {
             messageState.unsetLastMessage(),
         ]);
         await message.reply(
-            `In order to get the most accurate predictions use \`/turnip-sale\` on Sundays to report Daisy Mae's price. Then each morning and afternoon report your turnip price with \`/turnip-price\`/. You can run \`/turnip-predict\` at any time to get a link to your latest turnip price predictions. You can always use \`/turnip-help\` to be reminded of the commands I respond to.`,
+            `In order to get the most accurate predictions use \`/turnip-sale\` on Sundays to report Daisy Mae's price. Then each morning and afternoon report your turnip price with \`/turnip-price\`. You can run \`/turnip-predict\` at any time to get a link to your latest turnip price predictions. You can always use \`/turnip-help\` to be reminded of the commands I respond to.`,
         );
         return true;
     },

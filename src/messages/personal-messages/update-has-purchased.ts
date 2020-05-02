@@ -9,7 +9,7 @@ import { Messages } from '../../types/messages';
 const handler: MessageHandler = {
     message: Messages.updateHasPurchased,
     handler: async (
-        _messageState: PersonalMessageState,
+        messageState: PersonalMessageState,
         connection: Connection,
         message: Message,
         user: User,
@@ -23,6 +23,7 @@ const handler: MessageHandler = {
         const userRepository = connection.getRepository(User);
         user.hasPurchasedTurnipsOnIsland = response === YesOrNoResponse.yes;
         await userRepository.save(user);
+        await messageState.unsetLastMessage();
         return true;
     },
 };

@@ -11,7 +11,7 @@ async function askForPreviousPattern(messageState: PersonalMessageState, msg: Me
         `Thanks. What was your previous turnip price pattern? (fluctuating, large spike, decreasing, small spike)`,
     );
     await msg.author.send(`If you don't know, just answer "unknown".`);
-    messageState.setLastMessage(Messages.welcomePattern);
+    await messageState.setLastMessage(Messages.welcomePattern);
 }
 
 const handler: MessageHandler = {

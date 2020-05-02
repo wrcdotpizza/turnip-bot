@@ -16,7 +16,9 @@ import { getEventEmitter } from './global/event-emitter';
 import { getRedis } from './global/redis-store';
 import { buildMessageHandlers } from './messages/messages';
 import { PersonalMessageState } from './messages/message-helpers/personal-message-state';
+import * as events from './events';
 dotenv.config();
+events.registerEvents();
 
 const getOrCreateUserForMessageAuthor = async (
     repository: Repository<User>,
@@ -111,15 +113,7 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
 
             const lastMessage = await personalMessageState.getLastMessage();
             if (msg.channel.type === 'dm' && lastMessage !== null) {
-                const wasSuccess = await messageHandlers[lastMessage]?.handler(
-                    personalMessageState,
-                    connection,
-                    msg,
-                    user,
-                );
-                if (wasSuccess) {
-                    await personalMessageState.unsetLastMessage();
-                }
+                await messageHandlers[lastMessage]?.handler(personalMessageState, connection, msg, user);
                 return;
             }
 

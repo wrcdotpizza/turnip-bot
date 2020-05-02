@@ -13,11 +13,13 @@ export const reminderImplementation = async (redis: Redis.Redis, { msg, user }: 
         return;
     }
     await msg.author.send(
-        'Hey there, it looks like you just had another Sunday with Daisy Mae. Have you purchased turnips on your own island yet? This helps you get the most accurate predictions when using `/turnip-predict`',
+        'Hey there, it looks like you just had another Sunday with Daisy Mae. Have you purchased turnips on your own island yet?',
     );
     await messageState.setLastMessage(Messages.updateHasPurchased);
 };
 
 export const sendTurnipPurchaseReminder = withRedis(reminderImplementation, getRedis());
 
-getEventEmitter().on(`post ${SalePrice.command}`, sendTurnipPurchaseReminder);
+export function registerEvents(): void {
+    getEventEmitter().on(`post ${SalePrice.command}`, sendTurnipPurchaseReminder);
+}
