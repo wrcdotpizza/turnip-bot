@@ -1,6 +1,6 @@
 import { Message } from 'discord.js';
-import { Messages } from '../messages';
 import { PersonalMessageState } from '../message-helpers/personal-message-state';
+import { Messages } from '../../types/messages';
 
 export async function beginWelcomeConversation(messageState: PersonalMessageState, msg: Message): Promise<void> {
     await msg.author.send('Sounds like you want to start tracking your turnips. I have a few questions for you...');

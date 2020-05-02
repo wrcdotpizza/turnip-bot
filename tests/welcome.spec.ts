@@ -3,8 +3,8 @@ import { beginWelcomeConversation } from '../src/messages/welcome/welcome';
 import { User } from '../src/entity/user';
 import { verify, anything } from 'ts-mockito';
 import { MockMessage, getMockMessage } from './helpers/get-mock-message';
-import { Messages } from '../src/messages/messages';
 import { PersonalMessageState } from '../src/messages/message-helpers/personal-message-state';
+import { Messages } from '../src/types/messages';
 
 describe('Welcome flow', () => {
     let message: MockMessage;

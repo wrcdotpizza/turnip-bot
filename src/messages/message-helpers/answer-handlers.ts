@@ -7,12 +7,13 @@ enum YesOrNoResponse {
 }
 
 function handleYesOrNoAnswer(messageText: string): YesOrNoResponse {
-    messageText.trim();
-    const affirmitiveRegex = /([Yy]up|[Yy]eah|[Yy]es|[Yy]ee|[Yy]ea)/;
-    const negativeRegex = /([Nn]o|[Nn]ope|[Nn]ah|[Nn]ay)/;
-    if (affirmitiveRegex.test(messageText)) {
+    const transformedText = messageText.toLowerCase();
+    transformedText.trim();
+    const affirmitiveRegex = /^([Yy]up|[Yy]eah|[Yy]es|[Yy]ee|[Yy]ea)$/;
+    const negativeRegex = /^([Nn]o|[Nn]ope|[Nn]ah|[Nn]ay)$/;
+    if (affirmitiveRegex.test(transformedText)) {
         return YesOrNoResponse.yes;
-    } else if (negativeRegex.test(messageText)) {
+    } else if (negativeRegex.test(transformedText)) {
         return YesOrNoResponse.no;
     } else {
         return YesOrNoResponse.unknown;

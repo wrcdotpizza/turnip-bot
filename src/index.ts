@@ -72,7 +72,7 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
 
 (async (): Promise<void> => {
     const connection = await connectToDb();
-    const messageHandlers = await buildMessageHandlers();
+    const messageHandlers = buildMessageHandlers();
     const userRepository = connection.getRepository(User);
     const serverRepository = connection.getRepository(DiscordServer);
 

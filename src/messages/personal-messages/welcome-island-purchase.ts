@@ -2,10 +2,11 @@ import { Message } from 'discord.js';
 import { User } from '../../entity/user';
 import { handleYesOrNoAnswer, YesOrNoResponse } from '../message-helpers/answer-handlers';
 import { Connection } from 'typeorm';
-import { Messages } from '../messages';
 import { PersonalMessageState } from '../message-helpers/personal-message-state';
+import { MessageHandler } from '../../types/message-handler';
+import { Messages } from '../../types/messages';
 
-async function askForPreviousPattern(messageState: PersonalMessageState, user: User, msg: Message): Promise<void> {
+async function askForPreviousPattern(messageState: PersonalMessageState, msg: Message): Promise<void> {
     await msg.author.send(
         `Thanks. What was your previous turnip price pattern? (fluctuating, large spike, decreasing, small spike)`,
     );
@@ -13,7 +14,7 @@ async function askForPreviousPattern(messageState: PersonalMessageState, user: U
     messageState.setLastMessage(Messages.welcomePattern);
 }
 
-module.exports = {
+const handler: MessageHandler = {
     message: Messages.welcomeIslandPurchase,
     handler: async (
         messageState: PersonalMessageState,
@@ -29,7 +30,9 @@ module.exports = {
         }
         user.hasPurchasedTurnipsOnIsland = islandPurchaseResponse === YesOrNoResponse.yes;
         await userRepository.save(user);
-        await askForPreviousPattern(messageState, user, message);
+        await askForPreviousPattern(messageState, message);
         return true;
     },
 };
+
+export default handler;

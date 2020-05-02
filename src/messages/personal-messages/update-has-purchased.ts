@@ -2,10 +2,11 @@ import { Message } from 'discord.js';
 import { User } from '../../entity/user';
 import { handleYesOrNoAnswer, YesOrNoResponse } from '../message-helpers/answer-handlers';
 import { Connection } from 'typeorm';
-import { Messages } from '../messages';
 import { PersonalMessageState } from '../message-helpers/personal-message-state';
+import { MessageHandler } from '../../types/message-handler';
+import { Messages } from '../../types/messages';
 
-module.exports = {
+const handler: MessageHandler = {
     message: Messages.updateHasPurchased,
     handler: async (
         _messageState: PersonalMessageState,
@@ -25,3 +26,5 @@ module.exports = {
         return true;
     },
 };
+
+export default handler;

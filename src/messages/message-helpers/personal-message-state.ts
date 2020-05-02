@@ -1,6 +1,6 @@
 import IORedis from 'ioredis';
 import { User } from '../../entity/user';
-import { Messages } from '../messages';
+import { Messages } from '../../types/messages';
 
 export class PersonalMessageState {
     constructor(private redis: IORedis.Redis, private user: User) {}
