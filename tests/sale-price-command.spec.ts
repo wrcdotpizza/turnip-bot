@@ -2,7 +2,6 @@ import { User } from '../src/entity/user';
 import { Message, User as DiscordUser } from 'discord.js';
 import { mock, verify, instance, when, anything, capture, anyString } from 'ts-mockito';
 import { SalePrice } from '../src/commands/sale-price';
-import { GetMockRedisClient } from './helpers/redis-mock';
 import { Connection, Repository } from 'typeorm';
 import { TurnipWeek } from '../src/entity/turnip-week';
 
@@ -24,7 +23,7 @@ describe('SalePrice command', () => {
         user = new User();
         mockConnection = mock(Connection);
         when(mockConnection.getRepository(TurnipWeek)).thenReturn(instance(mockTurnipWeekRepository));
-        salePriceCommand = new SalePrice(GetMockRedisClient(), instance(mockConnection));
+        salePriceCommand = new SalePrice(instance(mockConnection));
     });
 
     describe('Command validation', () => {

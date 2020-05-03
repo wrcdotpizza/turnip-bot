@@ -13,6 +13,12 @@ export class TurnipPattern implements Command {
         this.userRepo = connection.getRepository(User);
     }
 
+    public async help(message: Message, _user: User): Promise<void> {
+        await message.reply(
+            `I didn't understand your pattern. Please ensure it is ${getEnumValues(PricePatterns).join(' or ')}`,
+        );
+    }
+
     validate(message: Message, _user: User): Promise<boolean> {
         const pattern = this.parseMessage(message.content);
         return Promise.resolve(pattern ? true : false);

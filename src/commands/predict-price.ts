@@ -20,6 +20,10 @@ export class PredictPrice implements Command {
         this.userRepository = connection.getRepository(User);
     }
 
+    public help(_: Message, _user: User): Promise<void> {
+        return Promise.resolve();
+    }
+
     public validate(_message: Message, _user: User): Promise<boolean> {
         // Ensure they have an active turnip week
         return Promise.resolve(true);

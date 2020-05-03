@@ -3,8 +3,7 @@ import * as dotenv from 'dotenv';
 import { Client, User as Author, Message } from 'discord.js';
 import { createConnection, Repository, Connection } from 'typeorm';
 import { User } from './entity/user';
-import Redis from 'ioredis';
-import { beginWelcomeConversation, isInWelcomeAndIsDm, continueWelcomeQuestions } from './messages/welcome/welcome';
+import { beginWelcomeConversation } from './messages/welcome/welcome';
 import { StorePrice } from './commands/store-price';
 import { SalePrice } from './commands/sale-price';
 import { Command } from './commands/command';
@@ -13,7 +12,13 @@ import { DiscordServer } from './entity/discord-server';
 import { Ping } from './commands/ping';
 import { Help } from './commands/help';
 import { TurnipPattern } from './commands/turnip-pattern';
+import { getEventEmitter } from './global/event-emitter';
+import { getRedis } from './global/redis-store';
+import { buildMessageHandlers } from './messages/messages';
+import { PersonalMessageState } from './messages/message-helpers/personal-message-state';
+import * as events from './events';
 dotenv.config();
+events.registerEvents();
 
 const getOrCreateUserForMessageAuthor = async (
     repository: Repository<User>,
@@ -52,7 +57,6 @@ const getOrCreateDiscordServer = async (
 };
 
 const client = new Client();
-const redis = new Redis({ host: process.env.REDIS_HOST, port: parseInt(process.env.REDIS_PORT || '6379') });
 
 const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 3000): Promise<Connection> => {
     if (currentRetryNumber > maxRetries) {
@@ -70,12 +74,13 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
 
 (async (): Promise<void> => {
     const connection = await connectToDb();
+    const messageHandlers = buildMessageHandlers();
     const userRepository = connection.getRepository(User);
     const serverRepository = connection.getRepository(DiscordServer);
 
     const commands: { [key: string]: Command } = {
-        [StorePrice.command]: new StorePrice(redis, connection),
-        [SalePrice.command]: new SalePrice(redis, connection),
+        [StorePrice.command]: new StorePrice(connection),
+        [SalePrice.command]: new SalePrice(connection),
         [PredictPrice.command]: new PredictPrice(connection),
         [Ping.command]: new Ping(),
         [Help.command]: new Help(),
@@ -93,6 +98,7 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
             if (msg.author.bot) return;
 
             const { user, isNewUser } = await getOrCreateUserForMessageAuthor(userRepository, msg.author);
+            const messageState = new PersonalMessageState(getRedis(), user);
             const server = await getOrCreateDiscordServer(serverRepository, msg);
 
             if (server) {
@@ -101,12 +107,13 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
             }
 
             if (isNewUser) {
-                await beginWelcomeConversation(redis, user, msg);
+                await beginWelcomeConversation(messageState, msg);
                 return;
             }
 
-            if (await isInWelcomeAndIsDm(redis, user, msg)) {
-                await continueWelcomeQuestions(redis, user, msg, userRepository);
+            const lastMessage = await messageState.getLastMessage();
+            if (msg.channel.type === 'dm' && lastMessage !== null) {
+                await messageHandlers[lastMessage]?.handler(messageState, connection, msg, user);
                 return;
             }
 
@@ -119,6 +126,9 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
                     if (await handler.validate(msg, user)) {
                         console.log(`Running ${command} handler for user ${user.id}`);
                         await handler.execute(msg, user);
+                        getEventEmitter().emit(`post ${command}`, { msg, user, connection, messageState });
+                    } else {
+                        await handler.help(msg, user);
                     }
                 }
             }
@@ -132,6 +142,7 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
     const gracefulShutdown = (msg: string, callback: () => void): void => {
         console.log('Shutting down server for ' + msg);
         client.removeAllListeners();
+        getEventEmitter().removeAllListeners();
         callback();
         connection.close();
     };
