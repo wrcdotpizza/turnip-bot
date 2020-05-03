@@ -127,6 +127,8 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
                         console.log(`Running ${command} handler for user ${user.id}`);
                         await handler.execute(msg, user);
                         getEventEmitter().emit(`post ${command}`, { msg, user, connection, messageState });
+                    } else {
+                        await handler.help(msg, user);
                     }
                 }
             }

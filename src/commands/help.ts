@@ -33,6 +33,10 @@ Turnip Tracker help.
 export class Help implements Command {
     public static command = '/turnip-help';
 
+    public help(_: Message, _1: User): Promise<void> {
+        return Promise.resolve();
+    }
+
     public validate(_: Message, _1: User): Promise<boolean> {
         return Promise.resolve(true);
     }

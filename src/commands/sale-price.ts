@@ -13,6 +13,12 @@ export class SalePrice implements Command {
         this.turnipWeekRepository = this.connection.getRepository(TurnipWeek);
     }
 
+    public async help(message: Message, _user: User): Promise<void> {
+        await message.reply(
+            `I couldn't understand your message. Please ensure it is of the format \`/turnip-sale <price>\``,
+        );
+    }
+
     public validate(message: Message, _user: User): Promise<boolean> {
         try {
             const result = isSalePriceMessage(message.content);

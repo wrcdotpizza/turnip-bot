@@ -20,6 +20,12 @@ export class StorePrice implements Command {
         this.turnipWeekRepository = this.connection.getRepository(TurnipWeek);
     }
 
+    public async help(message: Message, _user: User): Promise<void> {
+        await message.reply(
+            `I couldn't understand your message. Please ensure it is of the format \`/turnip-price <price> <am or pm> <day>\``,
+        );
+    }
+
     public async validate(message: Message, _: User): Promise<boolean> {
         try {
             const result = isTurnipPriceMessage(message.content);
