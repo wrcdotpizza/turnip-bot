@@ -37,20 +37,30 @@ export class StorePrice implements Command {
     }
 
     public async execute(message: Message, user: User): Promise<void> {
-        const week = await this.getCurrentTurnipWeek(user);
+        const week = (await this.getCurrentTurnipWeek(user)) || (await this.createWeek(user));
         const values = parseTurnipMessage(message.content);
         const existingPrice = await this.priceRepository.findOne({
             turnipWeek: week,
             day: values.day,
             priceWindow: values.priceWindow,
         });
-        if (existingPrice) {
-            await message.reply('You have already submitted a price this week for that window.');
-            return;
-        }
 
-        await this.saveCurrentTurnipPrice(values, week);
-        await message.react('✅');
+        if (existingPrice) {
+            existingPrice.price = values.price;
+            this.priceRepository.save(existingPrice);
+            await message.react('🔼');
+        } else {
+            await this.saveCurrentTurnipPrice(values, week);
+            await message.react('✅');
+        }
+    }
+
+    private async createWeek(user: User): Promise<TurnipWeek> {
+        const newWeek = new TurnipWeek();
+        newWeek.user = user;
+        newWeek.active = true;
+        await this.turnipWeekRepository.save(newWeek);
+        return newWeek;
     }
 
     private getCurrentTurnipWeek(user: User): Promise<TurnipWeek | undefined> {

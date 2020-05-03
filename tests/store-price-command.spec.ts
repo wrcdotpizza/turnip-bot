@@ -42,10 +42,25 @@ describe('StorePrice command', () => {
     });
 
     describe('Command execution', () => {
-        it('should reply with error if user has already submitted price for the same time frame that week', async () => {
+        it('should create a turnip week on demand if user does not have one', async () => {
+            message.content = `/turnip-price 123 ${PriceWindow.am} monday`;
+            when(mockTurnipWeekRepository.queryBuilder.getOne()).thenResolve(undefined);
+
+            await storePriceCommand.execute(message, user);
+
+            verify(mockTurnipWeekRepository.repository.save(anything())).once();
+            const [price] = capture(mockTurnipPriceRepository.repository.save).last();
+            expect(price.turnipWeek).toBeDefined();
+        });
+
+        it('should update existing price if found', async () => {
             message.content = `/turnip-price 123 ${PriceWindow.am} monday`;
             const turnipWeek = new TurnipWeek();
             when(mockTurnipWeekRepository.queryBuilder.getOne()).thenResolve(turnipWeek);
+            const existingPrice = new TurnipPrice();
+            existingPrice.priceWindow = PriceWindow.am;
+            existingPrice.day = PriceDay.monday;
+            existingPrice.price = 10;
             when(
                 mockTurnipPriceRepository.repository.findOne(
                     deepEqual({
@@ -54,13 +69,15 @@ describe('StorePrice command', () => {
                         priceWindow: PriceWindow.am,
                     }),
                 ),
-            ).thenResolve(new TurnipPrice());
+            ).thenResolve(existingPrice);
 
             await storePriceCommand.execute(message, user);
 
-            verify(mockMessage.reply(anything())).once();
-            const [response] = capture(mockMessage.reply).last();
-            expect(response).toBe('You have already submitted a price this week for that window.');
+            verify(mockTurnipPriceRepository.repository.save(anything())).once();
+            const [price] = capture(mockTurnipPriceRepository.repository.save).last();
+            expect(price.day).toBe(existingPrice.day);
+            expect(price.priceWindow).toBe(existingPrice.priceWindow);
+            expect(price.price).toBe(123);
         });
 
         it.each`
