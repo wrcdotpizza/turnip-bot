@@ -50,7 +50,7 @@
   "dependencies": {
     "discord.js": "^12.2.0",
     "dotenv": "^8.2.0",
-    "ioredis": "^4.16.2",
+    "ioredis": "^4.16.3",
     "pg": "^8.0.3",
     "reflect-metadata": "^0.1.13",
     "typeorm": "^0.2.24"
