@@ -5,6 +5,10 @@ import { User } from '../entity/user';
 export class Ping implements Command {
     public static command = '/turnip-ping';
 
+    public help(_: Message, _1: User): Promise<void> {
+        return Promise.resolve();
+    }
+
     validate(_: Message, _1: User): Promise<boolean> {
         return Promise.resolve(true);
     }

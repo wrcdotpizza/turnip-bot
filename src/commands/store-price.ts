@@ -1,5 +1,4 @@
 import { Message } from 'discord.js';
-import { Redis } from 'ioredis';
 import { Connection, Repository } from 'typeorm';
 import { TurnipPrice } from '../entity/turnip-price';
 import {
@@ -16,37 +15,59 @@ export class StorePrice implements Command {
     private priceRepository: Repository<TurnipPrice>;
     private turnipWeekRepository: Repository<TurnipWeek>;
 
-    constructor(_: Redis, private connection: Connection) {
+    constructor(private connection: Connection) {
         this.priceRepository = this.connection.getRepository(TurnipPrice);
         this.turnipWeekRepository = this.connection.getRepository(TurnipWeek);
     }
 
+    public async help(message: Message, _user: User): Promise<void> {
+        await message.reply(
+            `I couldn't understand your message. Please ensure it is of the format \`/turnip-price <price> <am or pm> <day>\``,
+        );
+    }
+
     public async validate(message: Message, _: User): Promise<boolean> {
-        return Promise.resolve(isTurnipPriceMessage(message.content));
+        try {
+            const result = isTurnipPriceMessage(message.content);
+            return Promise.resolve(result);
+        } catch (err) {
+            console.error('Error occurred when parsing store price message', err);
+            return Promise.resolve(false);
+        }
     }
 
     public async execute(message: Message, user: User): Promise<void> {
-        const week = await this.getCurrentTurnipWeek(user);
+        const week = (await this.getCurrentTurnipWeek(user)) || (await this.createWeek(user));
         const values = parseTurnipMessage(message.content);
         const existingPrice = await this.priceRepository.findOne({
             turnipWeek: week,
             day: values.day,
             priceWindow: values.priceWindow,
         });
-        if (existingPrice) {
-            await message.reply('You have already submitted a price this week for that window.');
-            return;
-        }
 
-        await this.saveCurrentTurnipPrice(values, week);
-        await message.react('✅');
+        if (existingPrice) {
+            existingPrice.price = values.price;
+            this.priceRepository.save(existingPrice);
+            await message.react('🔼');
+        } else {
+            await this.saveCurrentTurnipPrice(values, week);
+            await message.react('✅');
+        }
+    }
+
+    private async createWeek(user: User): Promise<TurnipWeek> {
+        const newWeek = new TurnipWeek();
+        newWeek.user = user;
+        newWeek.active = true;
+        await this.turnipWeekRepository.save(newWeek);
+        return newWeek;
     }
 
     private getCurrentTurnipWeek(user: User): Promise<TurnipWeek | undefined> {
         return this.turnipWeekRepository
             .createQueryBuilder('week')
             .where('"userId" = :id', { id: user.id })
-            .addOrderBy('"createdAt"', 'DESC')
+            .orderBy('"createdAt"', 'DESC')
             .limit(1)
             .getOne();
     }

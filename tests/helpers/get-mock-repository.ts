@@ -13,6 +13,7 @@ export function getMockRepository<T>(): MockRepository<T> {
     const mockQueryBuilder = mock(SelectQueryBuilder);
     when(mockRepository.createQueryBuilder(anyString())).thenReturn(instance(mockQueryBuilder));
     when(mockQueryBuilder.orderBy(anything())).thenReturn(instance(mockQueryBuilder));
+    when(mockQueryBuilder.orderBy(anything(), anything())).thenReturn(instance(mockQueryBuilder));
     when(mockQueryBuilder.where(anything())).thenReturn(instance(mockQueryBuilder));
     when(mockQueryBuilder.where(anything(), anything())).thenReturn(instance(mockQueryBuilder));
     when(mockQueryBuilder.limit(anything())).thenReturn(instance(mockQueryBuilder));
