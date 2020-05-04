@@ -10,8 +10,8 @@ export class TurnipWeek {
     @CreateDateColumn()
     createdAt?: Date;
 
-    @Column()
-    islandPrice?: number;
+    @Column('integer', { nullable: true })
+    islandPrice?: number | null;
 
     @Column('integer', { nullable: true })
     purchasePrice?: number | null;
