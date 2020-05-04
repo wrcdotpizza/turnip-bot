@@ -6,5 +6,7 @@
   "exclude": [
     "tests/**/*.spec.ts"
   ],
-  "include": []
+  "include": [
+    "src/migration/**/*.ts"
+  ]
 }

@@ -6,3 +6,4 @@ yarn-error.log
 pgdata
 .DS_Store
 .env
+ormconfig.*.json

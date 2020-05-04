@@ -11,7 +11,7 @@ export const PATTERN = {
 
 export class PredictionLinkBuilder {
     constructor(
-        private islandPrice: number | undefined,
+        private islandPrice: number | undefined | null,
         private prices: Array<TurnipPrice>,
         private previousPattern: PricePatterns | undefined,
         private hasPurchasedOnOwnIsland: boolean,
@@ -25,7 +25,7 @@ export class PredictionLinkBuilder {
         return `https://turnipprophet.io?prices=${priceString}&first=${!hasPurchasedTurnips}&pattern=${previousPattern}`;
     }
 
-    private buildPriceString(islandPrice: number | undefined, prices: Array<TurnipPrice>): string {
+    private buildPriceString(islandPrice: number | undefined | null, prices: Array<TurnipPrice>): string {
         const pricesByDay = prices.reduce((carry, price) => {
             const priceDay = price.day!;
             const priceWindow = price.priceWindow!;
