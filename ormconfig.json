@@ -5,7 +5,7 @@
    "username": "app",
    "password": "password",
    "database": "turnip_tracker",
-   "synchronize": true,
+   "synchronize": false,
    "logging": false,
    "entities": [
       "dist/entity/**/*.js"
@@ -15,5 +15,9 @@
    ],
    "subscribers": [
       "dist/subscriber/**/*.js"
-   ]
+   ],
+   "migrationsTableName": "turnip_tracker_migrations",
+   "cli": {
+        "migrationsDir": "src/migration"
+    }
 }
