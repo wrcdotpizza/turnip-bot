@@ -1,6 +1,6 @@
 import { User } from '../entity/user';
 import { Message } from 'discord.js';
-import { PersonalMessageState } from '../messages/message-helpers/personal-message-state';
+import { PersonalMessageState } from '../messages/models/personal-message-state';
 import { Connection } from 'typeorm';
 import { Messages } from './messages';
 

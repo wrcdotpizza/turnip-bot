@@ -1,6 +1,6 @@
 import handler from '../../src/messages/personal-messages/update-has-purchased';
 import { Messages } from '../../src/types/messages';
-import { PersonalMessageState } from '../../src/messages/message-helpers/personal-message-state';
+import { PersonalMessageState } from '../../src/messages/models/personal-message-state';
 import { GetMockRedisClient } from '../helpers/redis-mock';
 import { User } from '../../src/entity/user';
 import { Connection } from 'typeorm';

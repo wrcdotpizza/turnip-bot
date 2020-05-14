@@ -1,8 +1,8 @@
 import { Message } from 'discord.js';
 import { User } from '../../entity/user';
 import { Connection } from 'typeorm';
-import { PersonalMessageState } from '../message-helpers/personal-message-state';
-import { handleEnumAnswer } from '../message-helpers/answer-handlers';
+import { PersonalMessageState } from '../models/personal-message-state';
+import { handleEnumAnswer } from '../answer-handlers';
 import { PricePatterns } from '../../types/price-patterns';
 import { MessageHandler } from '../../types/message-handler';
 import { Messages } from '../../types/messages';

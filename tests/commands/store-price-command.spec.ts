@@ -1,11 +1,11 @@
-import { User } from '../src/entity/user';
+import { User } from '../../src/entity/user';
 import { Message, User as DiscordUser } from 'discord.js';
 import { mock, instance, verify, capture, anything, when, deepEqual } from 'ts-mockito';
 import { Connection } from 'typeorm';
-import { TurnipWeek } from '../src/entity/turnip-week';
-import { PriceWindow, PriceDay, TurnipPrice } from '../src/entity/turnip-price';
-import { StorePrice } from '../src/commands/store-price';
-import { addMockRepository, MockRepository } from './helpers/get-mock-repository';
+import { TurnipWeek } from '../../src/entity/turnip-week';
+import { PriceWindow, PriceDay, TurnipPrice } from '../../src/entity/turnip-price';
+import { StorePrice } from '../../src/commands/turnip-price';
+import { addMockRepository, MockRepository } from '../helpers/get-mock-repository';
 
 describe('StorePrice command', () => {
     let user: User;
@@ -31,9 +31,22 @@ describe('StorePrice command', () => {
 
     describe('Command validation', () => {
         it.each`
-            messageContent                    | result
-            ${'/turnip-price 123 am tuesday'} | ${true}
-            ${'/turnip-price friday'}         | ${false}
+            messageContent                     | result
+            ${'/turnip-price 395 am saturday'} | ${true}
+            ${'/turnip-price 1 pm friday'}     | ${true}
+            ${'/turnip-price 90 pm tuesday'}   | ${true}
+            ${'/turnip-price 123 am monday'}   | ${true}
+            ${'/turnip-price 123 monday am'}   | ${false}
+            ${'/turnip-price monday am 123'}   | ${false}
+            ${'1'}                             | ${false}
+            ${'price 123 pm monday'}           | ${false}
+            ${'price 1 pm wednesday'}          | ${false}
+            ${'price 1 wednesday'}             | ${false}
+            ${'price 1 am'}                    | ${false}
+            ${'price is 1'}                    | ${false}
+            ${'turnip price 1123'}             | ${false}
+            ${'turnip price: 11234'}           | ${false}
+            ${'turnip price: '}                | ${false}
         `('should return $result if message is "$messageContent"', async ({ messageContent, result }) => {
             message.content = messageContent;
             const isValid = await storePriceCommand.validate(message, user);

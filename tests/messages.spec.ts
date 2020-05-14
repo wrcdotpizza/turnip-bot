@@ -1,4 +1,4 @@
-import { buildMessageHandlers } from '../src/messages/messages';
+import { buildMessageHandlers } from '../src/messages/build-handlers';
 import { MessageHandler } from '../src/types/message-handler';
 import * as ExpectedPersonalMessages from '../src/messages/personal-messages';
 

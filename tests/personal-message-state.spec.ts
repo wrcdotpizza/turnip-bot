@@ -1,4 +1,4 @@
-import { PersonalMessageState } from '../src/messages/message-helpers/personal-message-state';
+import { PersonalMessageState } from '../src/messages/models/personal-message-state';
 import { GetMockRedisClient } from './helpers/redis-mock';
 import { Redis } from 'ioredis';
 import { User } from '../src/entity/user';

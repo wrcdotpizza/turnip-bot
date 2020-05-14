@@ -2,11 +2,11 @@ import { Message } from 'discord.js';
 import { Connection, Repository } from 'typeorm';
 import { User } from '../entity/user';
 import { TurnipWeek } from '../entity/turnip-week';
-import { parseSalePriceMessage, isSalePriceMessage } from '../messages/sale-price/sale-price';
 import { Command } from './command';
 
 export class SalePrice implements Command {
     public static command = '/turnip-sale';
+    private readonly messageRegex = /^\/turnip-sale (\d{1,3})$/;
     private turnipWeekRepository: Repository<TurnipWeek>;
 
     constructor(private connection: Connection) {
@@ -21,7 +21,7 @@ export class SalePrice implements Command {
 
     public validate(message: Message, _user: User): Promise<boolean> {
         try {
-            const result = isSalePriceMessage(message.content);
+            const result = this.messageRegex.test(message.content);
             return Promise.resolve(result);
         } catch (err) {
             console.error('Error occurred when parsing sale price message', err);
@@ -30,7 +30,7 @@ export class SalePrice implements Command {
     }
 
     public async execute(message: Message, user: User): Promise<void> {
-        const { price } = parseSalePriceMessage(message.content);
+        const { price } = this.parseMessage(message.content);
         const previousWeek = await this.turnipWeekRepository.findOne({ user, active: true });
         if (previousWeek) {
             previousWeek.active = false;
@@ -42,5 +42,15 @@ export class SalePrice implements Command {
         await this.turnipWeekRepository.save(turnipWeek);
 
         await message.react('✅');
+    }
+
+    private parseMessage(messageContent: string): { price: number } {
+        const matches = this.messageRegex.exec(messageContent);
+        if (matches === null) {
+            throw new Error('Parsing turnip price message failed, this should not be possible');
+        }
+        matches.shift();
+        const [price] = matches;
+        return { price: parseInt(price, 10) };
     }
 }
