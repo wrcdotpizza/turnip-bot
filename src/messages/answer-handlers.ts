@@ -1,4 +1,4 @@
-import { getEnumValues } from '../../helpers/get-enum-values';
+import { getEnumValues } from '../helpers/get-enum-values';
 
 enum YesOrNoResponse {
     yes,

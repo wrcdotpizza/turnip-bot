@@ -1,9 +1,9 @@
 import { GetMockRedisClient } from './helpers/redis-mock';
-import { beginWelcomeConversation } from '../src/messages/welcome/welcome';
+import { beginWelcomeConversation } from '../src/messages/welcome';
 import { User } from '../src/entity/user';
 import { verify, anything } from 'ts-mockito';
 import { MockMessage, getMockMessage } from './helpers/get-mock-message';
-import { PersonalMessageState } from '../src/messages/message-helpers/personal-message-state';
+import { PersonalMessageState } from '../src/messages/models/personal-message-state';
 import { Messages } from '../src/types/messages';
 
 describe('Welcome flow', () => {

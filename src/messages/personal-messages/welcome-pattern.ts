@@ -1,7 +1,7 @@
 import { Message } from 'discord.js';
 import { User } from '../../entity/user';
 import { Connection } from 'typeorm';
-import { PersonalMessageState } from '../message-helpers/personal-message-state';
+import { PersonalMessageState } from '../models/personal-message-state';
 import { MessageHandler } from '../../types/message-handler';
 import { Messages } from '../../types/messages';
 import UpdatePattern from './update-pattern';

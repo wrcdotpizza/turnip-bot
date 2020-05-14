@@ -3,7 +3,7 @@ import { GetMockRedisClient } from './helpers/redis-mock';
 import { MockMessage, getMockMessage } from './helpers/get-mock-message';
 import { HasPurchasedReminder, PatternReminder } from '../src/events/operations';
 import { anyString, verify, instance, mock, when, deepEqual } from 'ts-mockito';
-import { PersonalMessageState } from '../src/messages/message-helpers/personal-message-state';
+import { PersonalMessageState } from '../src/messages/models/personal-message-state';
 import { Connection } from 'typeorm';
 import { addMockRepository, MockRepository } from './helpers/get-mock-repository';
 import { TurnipWeek } from '../src/entity/turnip-week';

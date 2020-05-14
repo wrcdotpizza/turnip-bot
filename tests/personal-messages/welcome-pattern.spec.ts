@@ -1,4 +1,4 @@
-import { PersonalMessageState } from '../../src/messages/message-helpers/personal-message-state';
+import { PersonalMessageState } from '../../src/messages/models/personal-message-state';
 import { Connection } from 'typeorm';
 import { MockMessage, getMockMessage } from '../helpers/get-mock-message';
 import { MockRepository, addMockRepository } from '../helpers/get-mock-repository';

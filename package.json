@@ -6,7 +6,7 @@
   "scripts": {
     "test": "jest",
     "build:watch": "npm run build:prod -- --watch",
-    "build": "rimraf dist/* && tsc --project tsconfig.json",
+    "build": "rimraf dist-full/* && tsc --project tsconfig.json",
     "build:prod": "rimraf dist/* && tsc --project tsconfig-build.json",
     "lint": "eslint '**/*.ts' --quiet --fix",
     "start": "node dist/index.js",

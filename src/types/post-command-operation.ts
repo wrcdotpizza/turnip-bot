@@ -1,5 +1,5 @@
-import { PostCommandEvent } from '../types/post-command-event';
-import { Messages } from '../types/messages';
+import { PostCommandEvent } from './post-command-event';
+import { Messages } from './messages';
 
 export interface PostCommandOperation {
     readonly message: Messages;
