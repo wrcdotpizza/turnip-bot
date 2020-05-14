@@ -1,7 +1,7 @@
 import { User } from '../src/entity/user';
 import { GetMockRedisClient } from './helpers/redis-mock';
 import { MockMessage, getMockMessage } from './helpers/get-mock-message';
-import { sendTurnipPurchaseReminder } from '../src/events/post-sale-price';
+import { HasPurchasedReminder, PatternReminder } from '../src/events/operations';
 import { anyString, verify, instance, mock, when, deepEqual } from 'ts-mockito';
 import { PersonalMessageState } from '../src/messages/message-helpers/personal-message-state';
 import { Connection } from 'typeorm';
@@ -25,49 +25,87 @@ describe('post /turnip-sale events', () => {
             connection,
         });
 
-        describe('sendTurnipPurchaseReminder', () => {
-            beforeEach(() => {
-                user = new User();
-                user.id = 123;
-                user.hasPurchasedTurnipsOnIsland = false;
-                mockMessage = getMockMessage();
-                messageState = new PersonalMessageState(GetMockRedisClient(), user);
-                const mockConnection = mock(Connection);
-                connection = instance(mockConnection);
-                mockTurnipWeekRepo = addMockRepository(mockConnection, TurnipWeek);
-                when(mockTurnipWeekRepo.repository.count(deepEqual({ user }))).thenResolve(2);
+        beforeEach(() => {
+            user = new User();
+            user.id = 123;
+            user.hasPurchasedTurnipsOnIsland = false;
+            mockMessage = getMockMessage();
+            messageState = new PersonalMessageState(GetMockRedisClient(), user);
+            const mockConnection = mock(Connection);
+            connection = instance(mockConnection);
+            mockTurnipWeekRepo = addMockRepository(mockConnection, TurnipWeek);
+            when(mockTurnipWeekRepo.repository.count(deepEqual({ user }))).thenResolve(2);
+        });
+
+        describe('PatternReminder', () => {
+            describe('shouldSend', () => {
+                it('should return false if user has no turnip week prices', async () => {
+                    when(mockTurnipWeekRepo.repository.count(deepEqual({ user }))).thenResolve(0);
+                    const shouldSend = await PatternReminder.shouldSend(getPostCommandEvent());
+                    expect(shouldSend).toBe(false);
+                });
+
+                it('should return false if user has one turnip week price', async () => {
+                    when(mockTurnipWeekRepo.repository.count(deepEqual({ user }))).thenResolve(1);
+                    const shouldSend = await PatternReminder.shouldSend(getPostCommandEvent());
+                    expect(shouldSend).toBe(false);
+                });
+
+                it('should return true if user has more than one turnip week price', async () => {
+                    when(mockTurnipWeekRepo.repository.count(deepEqual({ user }))).thenResolve(2);
+                    const shouldSend = await PatternReminder.shouldSend(getPostCommandEvent());
+                    expect(shouldSend).toBe(true);
+                });
             });
 
-            it('should do nothing if user has no turnip week prices', async () => {
-                user.hasPurchasedTurnipsOnIsland = false;
-                when(mockTurnipWeekRepo.repository.count(deepEqual({ user }))).thenResolve(0);
-                await sendTurnipPurchaseReminder(getPostCommandEvent());
-                verify(mockMessage.mockAuthor.send(anyString())).never();
-                expect(await messageState.getLastMessage()).toEqual(null);
+            it('should send reminder message to update pattern', async () => {
+                await PatternReminder.execute(getPostCommandEvent());
+                verify(mockMessage.mockAuthor.send(anyString())).once();
             });
 
-            it('should do nothing if user has one turnip week price', async () => {
-                user.hasPurchasedTurnipsOnIsland = false;
-                when(mockTurnipWeekRepo.repository.count(deepEqual({ user }))).thenResolve(1);
-                await sendTurnipPurchaseReminder(getPostCommandEvent());
-                verify(mockMessage.mockAuthor.send(anyString())).never();
-                expect(await messageState.getLastMessage()).toEqual(null);
+            it('should set last message to askForPattern', async () => {
+                await PatternReminder.execute(getPostCommandEvent());
+                expect(await messageState.getLastMessage()).toEqual(Messages.askForPattern);
             });
+        });
 
-            it('should do nothing if user has purchased turnips already', async () => {
-                user.hasPurchasedTurnipsOnIsland = true;
-                await sendTurnipPurchaseReminder(getPostCommandEvent());
-                verify(mockMessage.mockAuthor.send(anyString())).never();
-                expect(await messageState.getLastMessage()).toEqual(null);
+        describe('HasPurchasedReminder', () => {
+            describe('shouldSend', () => {
+                it('should return false if user has no turnip week prices', async () => {
+                    user.hasPurchasedTurnipsOnIsland = false;
+                    when(mockTurnipWeekRepo.repository.count(deepEqual({ user }))).thenResolve(0);
+                    const shouldSend = await HasPurchasedReminder.shouldSend(getPostCommandEvent());
+                    expect(shouldSend).toBe(false);
+                });
+
+                it('should return false if user has one turnip week price', async () => {
+                    user.hasPurchasedTurnipsOnIsland = false;
+                    when(mockTurnipWeekRepo.repository.count(deepEqual({ user }))).thenResolve(1);
+                    const shouldSend = await HasPurchasedReminder.shouldSend(getPostCommandEvent());
+                    expect(shouldSend).toBe(false);
+                });
+
+                it('should return false if user has purchased turnips already', async () => {
+                    user.hasPurchasedTurnipsOnIsland = true;
+                    const shouldSend = await HasPurchasedReminder.shouldSend(getPostCommandEvent());
+                    expect(shouldSend).toBe(false);
+                });
+
+                it('should not send if user has purchased turnips and has more than one price', async () => {
+                    user.hasPurchasedTurnipsOnIsland = true;
+                    when(mockTurnipWeekRepo.repository.count(deepEqual({ user }))).thenResolve(1);
+                    const shouldSend = await HasPurchasedReminder.shouldSend(getPostCommandEvent());
+                    expect(shouldSend).toBe(false);
+                });
             });
 
             it('should send reminder message to update purchase', async () => {
-                await sendTurnipPurchaseReminder(getPostCommandEvent());
+                await HasPurchasedReminder.execute(getPostCommandEvent());
                 verify(mockMessage.mockAuthor.send(anyString())).once();
             });
 
             it('should set last message to updateHasPurchased', async () => {
-                await sendTurnipPurchaseReminder(getPostCommandEvent());
+                await HasPurchasedReminder.execute(getPostCommandEvent());
                 expect(await messageState.getLastMessage()).toEqual(Messages.updateHasPurchased);
             });
         });
