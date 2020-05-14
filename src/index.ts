@@ -4,7 +4,7 @@ import { Client, User as Author, Message } from 'discord.js';
 import { createConnection, Repository, Connection } from 'typeorm';
 import { User } from './entity/user';
 import { beginWelcomeConversation } from './messages/welcome/welcome';
-import { StorePrice } from './commands/store-price';
+import { StorePrice } from './commands/turnip-price';
 import { SalePrice } from './commands/sale-price';
 import { Command } from './commands/command';
 import { PredictPrice } from './commands/predict-price';

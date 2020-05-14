@@ -5,7 +5,7 @@ import { User } from '../entity/user';
 import { TurnipWeek } from '../entity/turnip-week';
 import { TurnipPrice } from '../entity/turnip-price';
 import { SalePrice } from './sale-price';
-import { StorePrice } from './store-price';
+import { StorePrice } from './turnip-price';
 import { PredictionLinkBuilder } from './models/prediction-link-builder';
 
 export class PredictPrice implements Command {

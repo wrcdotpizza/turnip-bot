@@ -1,17 +1,19 @@
 import { Message } from 'discord.js';
 import { Connection, Repository } from 'typeorm';
-import { TurnipPrice } from '../entity/turnip-price';
-import {
-    parseTurnipMessage,
-    isTurnipPriceMessage,
-    TurnipPriceMessageValues,
-} from '../messages/turnip-price/turnip-price';
+import { TurnipPrice, PriceWindow, PriceDay, PriceDayForString } from '../entity/turnip-price';
 import { User } from '../entity/user';
 import { TurnipWeek } from '../entity/turnip-week';
 import { Command } from './command';
 
+interface TurnipPriceMessageValues {
+    price: number;
+    priceWindow: PriceWindow;
+    day: PriceDay;
+}
+
 export class StorePrice implements Command {
     public static command = '/turnip-price';
+    private readonly messageRegex = /^\/turnip-price (\d{1,3}) (am|pm) (monday|tuesday|wednesday|thursday|friday|saturday)$/;
     private priceRepository: Repository<TurnipPrice>;
     private turnipWeekRepository: Repository<TurnipWeek>;
 
@@ -28,7 +30,7 @@ export class StorePrice implements Command {
 
     public async validate(message: Message, _: User): Promise<boolean> {
         try {
-            const result = isTurnipPriceMessage(message.content);
+            const result = this.messageRegex.test(message.content);
             return Promise.resolve(result);
         } catch (err) {
             console.error('Error occurred when parsing store price message', err);
@@ -38,7 +40,7 @@ export class StorePrice implements Command {
 
     public async execute(message: Message, user: User): Promise<void> {
         const week = (await this.getCurrentTurnipWeek(user)) || (await this.createWeek(user));
-        const values = parseTurnipMessage(message.content);
+        const values = this.parseMessage(message.content);
         const existingPrice = await this.priceRepository.findOne({
             turnipWeek: week,
             day: values.day,
@@ -80,5 +82,19 @@ export class StorePrice implements Command {
         turnipPrice.turnipWeek = week;
         turnipPrice.day = day;
         await this.priceRepository.save(turnipPrice);
+    }
+
+    private parseMessage(messageContent: string): TurnipPriceMessageValues {
+        const matches = this.messageRegex.exec(messageContent.toLowerCase());
+        if (matches === null) {
+            throw new Error('Parsing turnip price message failed, this should not be possible');
+        }
+        matches.shift();
+        const [price, priceWindow, day] = matches;
+        return {
+            price: parseInt(price, 10),
+            priceWindow: priceWindow as PriceWindow,
+            day: PriceDayForString[day],
+        };
     }
 }
