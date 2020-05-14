@@ -1,7 +1,7 @@
-import { User } from '../src/entity/user';
+import { User } from '../../src/entity/user';
 import { Message, User as DiscordUser } from 'discord.js';
 import { mock, verify, instance } from 'ts-mockito';
-import { Ping } from '../src/commands/ping';
+import { Ping } from '../../src/commands/ping';
 
 describe('Ping command', () => {
     let user: User;

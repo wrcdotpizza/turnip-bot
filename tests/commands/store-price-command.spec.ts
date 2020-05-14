@@ -1,11 +1,11 @@
-import { User } from '../src/entity/user';
+import { User } from '../../src/entity/user';
 import { Message, User as DiscordUser } from 'discord.js';
 import { mock, instance, verify, capture, anything, when, deepEqual } from 'ts-mockito';
 import { Connection } from 'typeorm';
-import { TurnipWeek } from '../src/entity/turnip-week';
-import { PriceWindow, PriceDay, TurnipPrice } from '../src/entity/turnip-price';
-import { StorePrice } from '../src/commands/turnip-price';
-import { addMockRepository, MockRepository } from './helpers/get-mock-repository';
+import { TurnipWeek } from '../../src/entity/turnip-week';
+import { PriceWindow, PriceDay, TurnipPrice } from '../../src/entity/turnip-price';
+import { StorePrice } from '../../src/commands/turnip-price';
+import { addMockRepository, MockRepository } from '../helpers/get-mock-repository';
 
 describe('StorePrice command', () => {
     let user: User;

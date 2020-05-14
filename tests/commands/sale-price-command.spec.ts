@@ -1,9 +1,9 @@
-import { User } from '../src/entity/user';
+import { User } from '../../src/entity/user';
 import { Message, User as DiscordUser } from 'discord.js';
 import { mock, verify, instance, when, anything, capture, anyString } from 'ts-mockito';
-import { SalePrice } from '../src/commands/sale-price';
+import { SalePrice } from '../../src/commands/sale-price';
 import { Connection, Repository } from 'typeorm';
-import { TurnipWeek } from '../src/entity/turnip-week';
+import { TurnipWeek } from '../../src/entity/turnip-week';
 
 describe('SalePrice command', () => {
     let user: User;
