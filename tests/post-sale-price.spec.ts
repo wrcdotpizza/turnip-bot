@@ -8,7 +8,6 @@ import { Connection } from 'typeorm';
 import { addMockRepository, MockRepository } from './helpers/get-mock-repository';
 import { TurnipWeek } from '../src/entity/turnip-week';
 import { PostCommandEvent } from '../src/types/turnip-events';
-import { Messages } from '../src/types/messages';
 
 describe('post /turnip-sale events', () => {
     describe('turnipPurchaseReminder', () => {
@@ -62,11 +61,6 @@ describe('post /turnip-sale events', () => {
                 await PatternReminder.execute(getPostCommandEvent());
                 verify(mockMessage.mockAuthor.send(anyString())).once();
             });
-
-            it('should set last message to askForPattern', async () => {
-                await PatternReminder.execute(getPostCommandEvent());
-                expect(await messageState.getLastMessage()).toEqual(Messages.askForPattern);
-            });
         });
 
         describe('HasPurchasedReminder', () => {
@@ -97,16 +91,18 @@ describe('post /turnip-sale events', () => {
                     const shouldSend = await HasPurchasedReminder.shouldSend(getPostCommandEvent());
                     expect(shouldSend).toBe(false);
                 });
+
+                it('should send if user has not purchased turnips on their island and this is their second week', async () => {
+                    user.hasPurchasedTurnipsOnIsland = false;
+                    when(mockTurnipWeekRepo.repository.count(deepEqual({ user }))).thenResolve(2);
+                    const shouldSend = await HasPurchasedReminder.shouldSend(getPostCommandEvent());
+                    expect(shouldSend).toBe(true);
+                });
             });
 
             it('should send reminder message to update purchase', async () => {
                 await HasPurchasedReminder.execute(getPostCommandEvent());
                 verify(mockMessage.mockAuthor.send(anyString())).once();
-            });
-
-            it('should set last message to updateHasPurchased', async () => {
-                await HasPurchasedReminder.execute(getPostCommandEvent());
-                expect(await messageState.getLastMessage()).toEqual(Messages.updateHasPurchased);
             });
         });
     });

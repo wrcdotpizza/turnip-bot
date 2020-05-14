@@ -14,6 +14,7 @@ export async function fireOperationForMessage(message: Messages, event: PostComm
             if (await operation.shouldSend(event)) {
                 found = true;
                 await operation.execute(event);
+                await event.messageState.setLastMessage(operation.message);
             }
         }
     }

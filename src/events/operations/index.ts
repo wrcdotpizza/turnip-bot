@@ -4,6 +4,8 @@ import { TurnipWeek } from '../../entity/turnip-week';
 import { PostCommandEvent } from '../../types/post-command-event';
 import { Messages } from '../../types/messages';
 import { PostCommandOperation } from '../post-command-operation';
+import { getEnumValues } from '../../helpers/get-enum-values';
+import { PricePatterns } from '../../types/price-patterns';
 
 const isFirstTurnipWeek = async (connection: Connection, user: User): Promise<boolean> => {
     const turnipWeekRepo = connection.getRepository(TurnipWeek);
@@ -19,11 +21,10 @@ class TurnipPurchaseReminder implements PostCommandOperation {
         return !user.hasPurchasedTurnipsOnIsland && !isFirstWeek;
     }
 
-    async execute({ msg, messageState }: PostCommandEvent): Promise<void> {
+    async execute({ msg }: PostCommandEvent): Promise<void> {
         await msg.author.send(
             'Hey there, it looks like you just had another Sunday with Daisy Mae. Have you purchased turnips on your own island yet?',
         );
-        await messageState.setLastMessage(Messages.updateHasPurchased);
     }
 }
 
@@ -34,11 +35,15 @@ class SetPatternReminder implements PostCommandOperation {
         return !(await isFirstTurnipWeek(connection, user));
     }
 
-    async execute({ msg, messageState }: PostCommandEvent): Promise<void> {
+    async execute({ msg }: PostCommandEvent): Promise<void> {
+        const patternString = getEnumValues(PricePatterns)
+            .map(p => `\`${p}\``)
+            .join(', ');
         await msg.author.send(
-            `What was your pattern for your previous week? You can find it by running \`/turnip-predict\` and scrolling to the bottom. Only submit a pattern if it has 100% chance.`,
+            `What was your pattern for your previous week? (${patternString})
+You can find it your pattern by running \`/turnip-predict\` and scrolling to the bottom of the page.            
+Only submit a pattern if it had a 100% chance.`,
         );
-        await messageState.setLastMessage(Messages.askForPattern);
     }
 }
 

@@ -40,7 +40,7 @@ describe('welcomePattern handler', () => {
         message.instance.content = response;
         await handler.handler(messageState, instance(mockConnection), message.instance, user);
         expect(user.previousPattern).toBe(pattern);
-        verify(mockUserRepo.repository.save(deepEqual(user))).once();
+        verify(mockUserRepo.repository.save(deepEqual(user))).atLeast(1);
     });
 
     it('should mark user as been welcomed when complete', async () => {

@@ -113,6 +113,7 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
 
             const lastMessage = await messageState.getLastMessage();
             if (msg.channel.type === 'dm' && lastMessage !== null) {
+                console.log(`Running hanlder for lastMessage ${lastMessage} for user ${user.id}`);
                 await messageHandlers[lastMessage]?.handler(messageState, connection, msg, user);
             } else if (/^(\/\w+)/.test(msg.content)) {
                 const command = /^(\/turnip-\w+)/.exec(msg.content)?.pop();
@@ -132,6 +133,7 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
 
             const messageToSend = await messageState.dequeueMessage();
             if (messageToSend) {
+                console.log(`Dequeued ${messageToSend} for user id ${user.id}`);
                 await events.fireOperationForMessage(messageToSend, { msg, user, connection, messageState });
             }
         })();
