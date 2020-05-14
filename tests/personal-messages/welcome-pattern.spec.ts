@@ -1,13 +1,13 @@
-import { PersonalMessageState } from '../src/messages/message-helpers/personal-message-state';
+import { PersonalMessageState } from '../../src/messages/message-helpers/personal-message-state';
 import { Connection } from 'typeorm';
-import { MockMessage, getMockMessage } from './helpers/get-mock-message';
-import { MockRepository, addMockRepository } from './helpers/get-mock-repository';
-import { GetMockRedisClient } from './helpers/redis-mock';
+import { MockMessage, getMockMessage } from '../helpers/get-mock-message';
+import { MockRepository, addMockRepository } from '../helpers/get-mock-repository';
+import { GetMockRedisClient } from '../helpers/redis-mock';
 import { mock, verify, deepEqual, instance } from 'ts-mockito';
-import { User } from '../src/entity/user';
-import handler from '../src/messages/personal-messages/welcome-pattern';
-import { PricePatterns } from '../src/types/price-patterns';
-import { Messages } from '../src/types/messages';
+import { User } from '../../src/entity/user';
+import handler from '../../src/messages/personal-messages/welcome-pattern';
+import { PricePatterns } from '../../src/types/price-patterns';
+import { Messages } from '../../src/types/messages';
 
 describe('welcomePattern handler', () => {
     let messageState: PersonalMessageState;
