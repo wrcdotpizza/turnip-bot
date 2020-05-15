@@ -3,8 +3,8 @@ import * as dotenv from 'dotenv';
 import { Client, User as Author, Message } from 'discord.js';
 import { createConnection, Repository, Connection } from 'typeorm';
 import { User } from './entity/user';
-import { beginWelcomeConversation } from './messages/welcome/welcome';
-import { StorePrice } from './commands/store-price';
+import { beginWelcomeConversation } from './messages/welcome';
+import { StorePrice } from './commands/turnip-price';
 import { SalePrice } from './commands/sale-price';
 import { Command } from './commands/command';
 import { PredictPrice } from './commands/predict-price';
@@ -14,8 +14,8 @@ import { Help } from './commands/help';
 import { TurnipPattern } from './commands/turnip-pattern';
 import { getEventEmitter } from './global/event-emitter';
 import { getRedis } from './global/redis-store';
-import { buildMessageHandlers } from './messages/messages';
-import { PersonalMessageState } from './messages/message-helpers/personal-message-state';
+import { buildMessageHandlers } from './messages/build-handlers';
+import { PersonalMessageState } from './messages/models/personal-message-state';
 import * as events from './events';
 dotenv.config();
 events.registerEvents();
@@ -113,11 +113,9 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
 
             const lastMessage = await messageState.getLastMessage();
             if (msg.channel.type === 'dm' && lastMessage !== null) {
+                console.log(`Running hanlder for lastMessage ${lastMessage} for user ${user.id}`);
                 await messageHandlers[lastMessage]?.handler(messageState, connection, msg, user);
-                return;
-            }
-
-            if (/^(\/\w+)/.test(msg.content)) {
+            } else if (/^(\/\w+)/.test(msg.content)) {
                 const command = /^(\/turnip-\w+)/.exec(msg.content)?.pop();
                 msg.content = msg.content.toLowerCase().trim();
                 if (command && command in commands) {
@@ -131,6 +129,12 @@ const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 30
                         await handler.help(msg, user);
                     }
                 }
+            }
+
+            const messageToSend = await messageState.dequeueMessage();
+            if (messageToSend) {
+                console.log(`Dequeued ${messageToSend} for user id ${user.id}`);
+                await events.fireOperationForMessage(messageToSend, { msg, user, connection, messageState });
             }
         })();
     });

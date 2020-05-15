@@ -1,8 +1,4 @@
-import {
-    handleYesOrNoAnswer,
-    YesOrNoResponse,
-    handleEnumAnswer,
-} from '../src/messages/message-helpers/answer-handlers';
+import { handleYesOrNoAnswer, YesOrNoResponse, handleEnumAnswer } from '../src/messages/answer-handlers';
 
 describe.only('answer handlers', () => {
     describe('handleEnumAnswer', () => {

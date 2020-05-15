@@ -1,16 +1,16 @@
-import { User } from '../src/entity/user';
+import { User } from '../../src/entity/user';
 import { Message, User as DiscordUser, Collection, MessageMentions } from 'discord.js';
 import { mock, instance, when, anything, deepEqual } from 'ts-mockito';
 import { Connection } from 'typeorm';
-import { TurnipWeek } from '../src/entity/turnip-week';
-import { PredictPrice } from '../src/commands/predict-price';
-import { TurnipPrice, PriceWindow, PriceDay } from '../src/entity/turnip-price';
-import { addMockRepository, MockRepository } from './helpers/get-mock-repository';
-import { getMockTurnipPrice } from './helpers/get-mock-turnip-price';
-import { PATTERN } from '../src/commands/models/prediction-link-builder';
-import { getReplyMessage } from './helpers/get-reply-message';
-import { Parse } from './helpers/parse';
-import { PricePatterns } from '../src/types/price-patterns';
+import { TurnipWeek } from '../../src/entity/turnip-week';
+import { PredictPrice } from '../../src/commands/predict-price';
+import { TurnipPrice, PriceWindow, PriceDay } from '../../src/entity/turnip-price';
+import { addMockRepository, MockRepository } from '../helpers/get-mock-repository';
+import { getMockTurnipPrice } from '../helpers/get-mock-turnip-price';
+import { PATTERN } from '../../src/commands/models/prediction-link-builder';
+import { getReplyMessage } from '../helpers/get-reply-message';
+import { Parse } from '../helpers/parse';
+import { PricePatterns } from '../../src/types/price-patterns';
 
 fdescribe('Predict command', () => {
     let user: User;

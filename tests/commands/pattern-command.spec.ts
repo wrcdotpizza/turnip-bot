@@ -1,10 +1,10 @@
-import { User } from '../src/entity/user';
+import { User } from '../../src/entity/user';
 import { Message, User as DiscordUser } from 'discord.js';
 import { mock, verify, instance, anything, capture, anyString } from 'ts-mockito';
 import { Connection } from 'typeorm';
-import { TurnipPattern } from '../src/commands/turnip-pattern';
-import { MockRepository, addMockRepository } from './helpers/get-mock-repository';
-import { PricePatterns } from '../src/types/price-patterns';
+import { TurnipPattern } from '../../src/commands/turnip-pattern';
+import { MockRepository, addMockRepository } from '../helpers/get-mock-repository';
+import { PricePatterns } from '../../src/types/price-patterns';
 
 describe('TurnipPattern command', () => {
     let user: User;

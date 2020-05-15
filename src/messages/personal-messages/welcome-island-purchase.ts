@@ -1,8 +1,8 @@
 import { Message } from 'discord.js';
 import { User } from '../../entity/user';
-import { handleYesOrNoAnswer, YesOrNoResponse } from '../message-helpers/answer-handlers';
+import { handleYesOrNoAnswer, YesOrNoResponse } from '../answer-handlers';
 import { Connection } from 'typeorm';
-import { PersonalMessageState } from '../message-helpers/personal-message-state';
+import { PersonalMessageState } from '../models/personal-message-state';
 import { MessageHandler } from '../../types/message-handler';
 import { Messages } from '../../types/messages';
 

@@ -1,12 +1,12 @@
-import handler from '../src/messages/personal-messages/update-has-purchased';
-import { Messages } from '../src/types/messages';
-import { PersonalMessageState } from '../src/messages/message-helpers/personal-message-state';
-import { GetMockRedisClient } from './helpers/redis-mock';
-import { User } from '../src/entity/user';
+import handler from '../../src/messages/personal-messages/update-has-purchased';
+import { Messages } from '../../src/types/messages';
+import { PersonalMessageState } from '../../src/messages/models/personal-message-state';
+import { GetMockRedisClient } from '../helpers/redis-mock';
+import { User } from '../../src/entity/user';
 import { Connection } from 'typeorm';
 import { mock, instance, verify, deepEqual } from 'ts-mockito';
-import { getMockMessage, MockMessage } from './helpers/get-mock-message';
-import { addMockRepository, MockRepository } from './helpers/get-mock-repository';
+import { getMockMessage, MockMessage } from '../helpers/get-mock-message';
+import { addMockRepository, MockRepository } from '../helpers/get-mock-repository';
 
 describe('updateHasPurchased handler', () => {
     let messageState: PersonalMessageState;

@@ -1,12 +1,12 @@
-import { PersonalMessageState } from '../src/messages/message-helpers/personal-message-state';
+import { PersonalMessageState } from '../../src/messages/models/personal-message-state';
 import { Connection } from 'typeorm';
-import { MockMessage, getMockMessage } from './helpers/get-mock-message';
-import { MockRepository, addMockRepository } from './helpers/get-mock-repository';
-import { GetMockRedisClient } from './helpers/redis-mock';
+import { MockMessage, getMockMessage } from '../helpers/get-mock-message';
+import { MockRepository, addMockRepository } from '../helpers/get-mock-repository';
+import { GetMockRedisClient } from '../helpers/redis-mock';
 import { mock, instance, verify, deepEqual, anyString } from 'ts-mockito';
-import { User } from '../src/entity/user';
-import handler from '../src/messages/personal-messages/welcome-island-purchase';
-import { Messages } from '../src/types/messages';
+import { User } from '../../src/entity/user';
+import handler from '../../src/messages/personal-messages/welcome-island-purchase';
+import { Messages } from '../../src/types/messages';
 
 describe('welcomeIslandPurchase handler', () => {
     let messageState: PersonalMessageState;

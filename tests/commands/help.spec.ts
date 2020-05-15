@@ -1,7 +1,7 @@
-import { User } from '../src/entity/user';
+import { User } from '../../src/entity/user';
 import { Message, User as DiscordUser } from 'discord.js';
 import { mock, verify, instance } from 'ts-mockito';
-import { Help, HelpMessage } from '../src/commands/help';
+import { Help, HelpMessage } from '../../src/commands/help';
 
 describe('Help command', () => {
     let user: User;

@@ -25,6 +25,10 @@ Turnip Tracker help.
 - Command: \`/turnip-pattern <${getEnumValues(PricePatterns).join(' or ')}>\`
 - _This will update your stored previous pattern to the specified pattern. This ensures you get the most accurate predictions from the prophet_
 
+**Reset Your Prices**
+- Command: \`/turnip-reset\`
+- _If you had a previous turnip week started with /turnip-sale, and you forgot to start a new one or you have conflicting prices you will want to reset your stored prices by running this command_
+
 **Get help**:
 - Command: \`/turnip-help\`
 - _See this message_
