@@ -1,27 +1,22 @@
 import { User } from '../../src/entity/user';
-import { Message, User as DiscordUser } from 'discord.js';
-import { mock, instance, verify, capture, anything, when, deepEqual } from 'ts-mockito';
+import { mock, instance, verify, capture, anything, when, deepEqual, anyString } from 'ts-mockito';
 import { Connection } from 'typeorm';
 import { TurnipWeek } from '../../src/entity/turnip-week';
 import { PriceWindow, PriceDay, TurnipPrice } from '../../src/entity/turnip-price';
 import { StorePrice } from '../../src/commands/turnip-price';
 import { addMockRepository, MockRepository } from '../helpers/get-mock-repository';
+import { getMockMessage, MockMessage } from '../helpers/get-mock-message';
 
 describe('StorePrice command', () => {
     let user: User;
-    let message: Message;
-    let mockAuthor: DiscordUser;
-    let mockMessage: Message;
+    let message: MockMessage;
     let mockConnection: Connection;
     let storePriceCommand: StorePrice;
     let mockTurnipWeekRepository: MockRepository<TurnipWeek>;
     let mockTurnipPriceRepository: MockRepository<TurnipPrice>;
 
     beforeEach(() => {
-        mockMessage = mock(Message);
-        message = instance(mockMessage);
-        mockAuthor = mock(DiscordUser);
-        message.author = instance(mockAuthor);
+        message = getMockMessage();
         user = new User();
         mockConnection = mock(Connection);
         mockTurnipWeekRepository = addMockRepository(mockConnection, TurnipWeek);
@@ -48,26 +43,26 @@ describe('StorePrice command', () => {
             ${'turnip price: 11234'}           | ${false}
             ${'turnip price: '}                | ${false}
         `('should return $result if message is "$messageContent"', async ({ messageContent, result }) => {
-            message.content = messageContent;
-            const isValid = await storePriceCommand.validate(message, user);
+            message.instance.content = messageContent;
+            const isValid = await storePriceCommand.validate(message.instance, user);
             expect(isValid).toBe(result);
         });
     });
 
     describe('Command execution', () => {
         it('should create a turnip week on demand if user does not have one', async () => {
-            message.content = `/turnip-price 123 ${PriceWindow.am} monday`;
+            message.instance.content = `/turnip-price 123 ${PriceWindow.am} monday`;
             when(mockTurnipWeekRepository.queryBuilder.getOne()).thenResolve(undefined);
 
-            await storePriceCommand.execute(message, user);
+            await storePriceCommand.execute(message.instance, user);
 
             verify(mockTurnipWeekRepository.repository.save(anything())).once();
             const [price] = capture(mockTurnipPriceRepository.repository.save).last();
             expect(price.turnipWeek).toBeDefined();
         });
 
-        it('should update existing price if found', async () => {
-            message.content = `/turnip-price 123 ${PriceWindow.am} monday`;
+        it('should reply to reset week if conflicting price is found', async () => {
+            message.instance.content = `/turnip-price 123 ${PriceWindow.am} monday`;
             const turnipWeek = new TurnipWeek();
             when(mockTurnipWeekRepository.queryBuilder.getOne()).thenResolve(turnipWeek);
             const existingPrice = new TurnipPrice();
@@ -84,13 +79,10 @@ describe('StorePrice command', () => {
                 ),
             ).thenResolve(existingPrice);
 
-            await storePriceCommand.execute(message, user);
+            await storePriceCommand.execute(message.instance, user);
 
-            verify(mockTurnipPriceRepository.repository.save(anything())).once();
-            const [price] = capture(mockTurnipPriceRepository.repository.save).last();
-            expect(price.day).toBe(existingPrice.day);
-            expect(price.priceWindow).toBe(existingPrice.priceWindow);
-            expect(price.price).toBe(123);
+            verify(mockTurnipPriceRepository.repository.save(anything())).never();
+            verify(message.mock.reply(anyString())).once();
         });
 
         it.each`
@@ -104,8 +96,8 @@ describe('StorePrice command', () => {
         `(
             'should save $result when message is "$message"',
             async ({ messageContent, expectedPrice, expectedWindow, expectedDay }) => {
-                message.content = messageContent;
-                await storePriceCommand.execute(message, user);
+                message.instance.content = messageContent;
+                await storePriceCommand.execute(message.instance, user);
 
                 verify(mockTurnipPriceRepository.repository.save(anything())).once();
                 const [price] = capture(mockTurnipPriceRepository.repository.save).last();
