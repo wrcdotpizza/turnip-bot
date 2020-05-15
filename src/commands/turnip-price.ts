@@ -48,9 +48,9 @@ export class StorePrice implements Command {
         });
 
         if (existingPrice) {
-            existingPrice.price = values.price;
-            this.priceRepository.save(existingPrice);
-            await message.react('🔼');
+            await message.reply(
+                'You already have a price for that window this week. If this was intended, use `/turnip-help` to view your options to fix this issue.',
+            );
         } else {
             await this.saveCurrentTurnipPrice(values, week);
             await message.react('✅');
