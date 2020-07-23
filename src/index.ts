@@ -3,9 +3,11 @@ import { connectToDb } from './helpers/connect-to-db';
 import { TurnipWeek } from './entity/turnip-week';
 import { User } from './entity/user';
 import { TurnipPrice } from './entity/turnip-price';
+import { generateData } from './generate-data';
 
 (async (): Promise<void> => {
     const connection = await connectToDb();
+    await generateData(connection, { numUsers: 100, numWeeks: 5 });
     const userRepository = connection.getRepository(User);
     const weekRepository = connection.getRepository(TurnipWeek);
     const priceRepository = connection.getRepository(TurnipPrice);
@@ -75,11 +77,17 @@ import { TurnipPrice } from './entity/turnip-price';
         // Return { report: [{ day: enum, averagePrice: float }] }
         const pricesQuery = priceRepository
             .createQueryBuilder('price')
-            .select('SUM(price.price)', 'avgPrice')
+            .select(['AVG(price.price) as "avgPrice"', 'price.day', 'price.priceWindow'])
             .groupBy('day, "priceWindow"');
         const results = await pricesQuery.getRawMany();
         res.json({
-            report: results.map(p => ({ day: p.day, priceWindow: p.priceWindow, averagePrice: p.avgPrice })),
+            report: results
+                .sort((x, y) => x.price_day - y.price_day)
+                .map(p => ({
+                    day: p.price_day,
+                    priceWindow: p.price_priceWindow,
+                    averagePrice: parseFloat(p.avgPrice),
+                })),
         });
     });
 
