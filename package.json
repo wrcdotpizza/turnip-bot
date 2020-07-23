@@ -26,6 +26,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/express": "^4.17.7",
     "@types/ioredis": "^4.16.2",
     "@types/jest": "^25.2.2",
     "@types/node": "^14.0.1",
@@ -50,6 +51,7 @@
   "dependencies": {
     "discord.js": "^12.2.0",
     "dotenv": "^8.2.0",
+    "express": "^4.17.1",
     "ioredis": "^4.16.3",
     "pg": "^8.2.0",
     "reflect-metadata": "^0.1.13",
