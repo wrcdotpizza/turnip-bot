@@ -14,44 +14,62 @@ import { generateData } from './generate-data';
 
     const app = express();
 
+    app.use((req, res, next) => {
+        res.locals.dbType = req.headers['x-db-type'] === 'nosql' ? 'nosql' : 'sql';
+        next();
+    });
+
     // GET Weeks for User: /user/ < userId > /turnip-week
     app.get('/user/:id/turnip-week', async (req, res) => {
         const userId = parseInt(req.params.id);
-        const user = await userRepository.findOne({ id: userId });
-        const weeks = await weekRepository.find({ user });
-        res.json({ weeks: weeks.map(w => ({ weekId: w.id, price: w.islandPrice })) });
+        if (res.locals.dbType === 'sql') {
+            const user = await userRepository.findOne({ id: userId });
+            const weeks = await weekRepository.find({ user });
+            res.json({ weeks: weeks.map(w => ({ weekId: w.id, price: w.islandPrice })) });
+        } else {
+            res.json({ weeks: [] });
+        }
     });
 
     // POST Week for User: /user/<userId>/turnip-week
     app.post('/user/:id/turnip-week', async (req, res) => {
         const userId = parseInt(req.params.id);
-        const user = await userRepository.findOne({ id: userId });
-        const newWeek = new TurnipWeek();
-        newWeek.user = user;
-        newWeek.islandPrice = req.body.price;
-        await weekRepository.save(newWeek);
-        res.json({ week: { weekId: newWeek.id, price: newWeek.islandPrice } });
+        if (res.locals.dbType === 'sql') {
+            const user = await userRepository.findOne({ id: userId });
+            const newWeek = new TurnipWeek();
+            newWeek.user = user;
+            newWeek.islandPrice = req.body.price;
+            await weekRepository.save(newWeek);
+            res.json({ week: { weekId: newWeek.id, price: newWeek.islandPrice } });
+        } else {
+            res.json({ week: null });
+        }
     });
 
     // GET Turnip Prices: /user/<userId >/turnip-week/<weekId>/turnip-prices
     app.get('/user/:id/turnip-week/:weekId/turnip-prices', async (req, res) => {
         const userId = parseInt(req.params.id);
-        const user = await userRepository.findOne({ id: userId });
         const weekId = parseInt(req.params.weekId);
-        const week = await weekRepository.findOne({ id: weekId, user });
 
-        if (week === undefined) {
-            res.status(404).json({ message: 'Not found' });
+        if (res.locals.dbType === 'sql') {
+            const user = await userRepository.findOne({ id: userId });
+            const week = await weekRepository.findOne({ id: weekId, user });
+
+            if (week === undefined) {
+                res.status(404).json({ message: 'Not found' });
+            } else {
+                const prices = week.turnipPrices || [];
+                res.json({
+                    prices: prices.map(p => ({
+                        priceId: p.id,
+                        price: p.price,
+                        day: p.day,
+                        window: p.priceWindow,
+                    })),
+                });
+            }
         } else {
-            const prices = week.turnipPrices || [];
-            res.json({
-                prices: prices.map(p => ({
-                    priceId: p.id,
-                    price: p.price,
-                    day: p.day,
-                    window: p.priceWindow,
-                })),
-            });
+            res.json({ prices: [] });
         }
     });
 
@@ -59,36 +77,44 @@ import { generateData } from './generate-data';
     app.post('/user/:id/turnip-week/:weekId/turnip-prices', async (req, res) => {
         const userId = parseInt(req.params.id);
         const weekId = parseInt(req.params.weekId);
-        const user = await userRepository.findOne({ id: userId });
-        const week = await weekRepository.findOne({ id: weekId, user });
+        if (res.locals.dbType === 'sql') {
+            const user = await userRepository.findOne({ id: userId });
+            const week = await weekRepository.findOne({ id: weekId, user });
 
-        const { price, priceWindow, day } = req.body;
-        const newPrice = new TurnipPrice();
-        newPrice.turnipWeek = week;
-        newPrice.price = price;
-        newPrice.priceWindow = priceWindow;
-        newPrice.day = day;
-        await priceRepository.save(newPrice);
-        res.json({ priceId: price.id });
+            const { price, priceWindow, day } = req.body;
+            const newPrice = new TurnipPrice();
+            newPrice.turnipWeek = week;
+            newPrice.price = price;
+            newPrice.priceWindow = priceWindow;
+            newPrice.day = day;
+            await priceRepository.save(newPrice);
+            res.json({ priceId: price.id });
+        } else {
+            res.json({ priceId: null });
+        }
     });
 
     // GET /report
     app.get('/report', async (_, res) => {
         // Return { report: [{ day: enum, averagePrice: float }] }
-        const pricesQuery = priceRepository
-            .createQueryBuilder('price')
-            .select(['AVG(price.price) as "avgPrice"', 'price.day', 'price.priceWindow'])
-            .groupBy('day, "priceWindow"');
-        const results = await pricesQuery.getRawMany();
-        res.json({
-            report: results
-                .sort((x, y) => x.price_day - y.price_day)
-                .map(p => ({
-                    day: p.price_day,
-                    priceWindow: p.price_priceWindow,
-                    averagePrice: parseFloat(p.avgPrice),
-                })),
-        });
+        if (res.locals.dbType === 'sql') {
+            const pricesQuery = priceRepository
+                .createQueryBuilder('price')
+                .select(['AVG(price.price) as "avgPrice"', 'price.day', 'price.priceWindow'])
+                .groupBy('day, "priceWindow"');
+            const results = await pricesQuery.getRawMany();
+            res.json({
+                report: results
+                    .sort((x, y) => x.price_day - y.price_day)
+                    .map(p => ({
+                        day: p.price_day,
+                        priceWindow: p.price_priceWindow,
+                        averagePrice: parseFloat(p.avgPrice),
+                    })),
+            });
+        } else {
+            res.json({ report: [] });
+        }
     });
 
     const server = app.listen(3000, () => {
