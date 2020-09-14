@@ -1,5 +1,6 @@
 import express from 'express';
 import { buildRouter as sqlRoutes } from './routes/sql-routes';
+import { buildRouter as noSqlRoutes } from './routes/nosql-routes';
 
 (async (): Promise<void> => {
     const app = express();
@@ -9,7 +10,9 @@ import { buildRouter as sqlRoutes } from './routes/sql-routes';
     });
 
     const sqlRouter = await sqlRoutes();
+    const noSqlRouter = await noSqlRoutes();
     app.use('/sql', sqlRouter);
+    app.use('/nosql', noSqlRouter);
 
     server.on('error', err => {
         console.error('An error occurred', err);
