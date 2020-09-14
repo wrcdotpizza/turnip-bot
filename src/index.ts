@@ -1,154 +1,110 @@
-import 'reflect-metadata';
-import * as dotenv from 'dotenv';
-import { Client, User as Author, Message } from 'discord.js';
-import { createConnection, Repository, Connection } from 'typeorm';
+import express from 'express';
+import { connectToDb } from './helpers/connect-to-db';
+import { TurnipWeek } from './entity/turnip-week';
 import { User } from './entity/user';
-import { beginWelcomeConversation } from './messages/welcome';
-import { StorePrice } from './commands/turnip-price';
-import { SalePrice } from './commands/sale-price';
-import { Command } from './commands/command';
-import { PredictPrice } from './commands/predict-price';
-import { DiscordServer } from './entity/discord-server';
-import { Ping } from './commands/ping';
-import { Help } from './commands/help';
-import { TurnipPattern } from './commands/turnip-pattern';
-import { getEventEmitter } from './global/event-emitter';
-import { getRedis } from './global/redis-store';
-import { buildMessageHandlers } from './messages/build-handlers';
-import { PersonalMessageState } from './messages/models/personal-message-state';
-import * as events from './events';
-dotenv.config();
-events.registerEvents();
-
-const getOrCreateUserForMessageAuthor = async (
-    repository: Repository<User>,
-    author: Author,
-): Promise<{ user: User; isNewUser: boolean }> => {
-    let user: User | undefined;
-    let isNewUser = false;
-    user = await repository.findOne({ discordId: author.id });
-    if (!user) {
-        isNewUser = true;
-        user = new User();
-        user.name = author.username;
-        user.discordId = author.id;
-        await repository.save(user);
-    }
-    return { user, isNewUser };
-};
-
-const getOrCreateDiscordServer = async (
-    repository: Repository<DiscordServer>,
-    message: Message,
-): Promise<DiscordServer | null> => {
-    if (!message.guild) {
-        return null;
-    }
-    const { id: serverId, name } = message.guild;
-    let server: DiscordServer | undefined;
-    server = await repository.findOne({ serverId });
-    if (!server) {
-        server = new DiscordServer();
-        server.serverId = serverId;
-        server.name = name;
-        await repository.save(server);
-    }
-    return server;
-};
-
-const client = new Client();
-
-const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 3000): Promise<Connection> => {
-    if (currentRetryNumber > maxRetries) {
-        throw new Error('Failed to connect to database in time');
-    }
-
-    try {
-        return await createConnection();
-    } catch (error) {
-        console.info('Failed to connect to database. Retrying...');
-        await new Promise(res => setTimeout(res, timeout));
-        return await connectToDb(maxRetries, currentRetryNumber++, timeout);
-    }
-};
+import { TurnipPrice } from './entity/turnip-price';
+import { generateData } from './generate-data';
 
 (async (): Promise<void> => {
     const connection = await connectToDb();
-    const messageHandlers = buildMessageHandlers();
+    await generateData(connection, { numUsers: 100, numWeeks: 5 });
     const userRepository = connection.getRepository(User);
-    const serverRepository = connection.getRepository(DiscordServer);
+    const weekRepository = connection.getRepository(TurnipWeek);
+    const priceRepository = connection.getRepository(TurnipPrice);
 
-    const commands: { [key: string]: Command } = {
-        [StorePrice.command]: new StorePrice(connection),
-        [SalePrice.command]: new SalePrice(connection),
-        [PredictPrice.command]: new PredictPrice(connection),
-        [Ping.command]: new Ping(),
-        [Help.command]: new Help(),
-        [TurnipPattern.command]: new TurnipPattern(connection),
-    };
+    const app = express();
 
-    client.on('ready', () => {
-        if (client.user) {
-            console.log(`Logged in as ${client.user.tag}!`);
+    // GET Weeks for User: /user/ < userId > /turnip-week
+    app.get('/user/:id/turnip-week', async (req, res) => {
+        const userId = parseInt(req.params.id);
+        const user = await userRepository.findOne({ id: userId });
+        const weeks = await weekRepository.find({ user });
+        res.json({ weeks: weeks.map(w => ({ weekId: w.id, price: w.islandPrice })) });
+    });
+
+    // POST Week for User: /user/<userId>/turnip-week
+    app.post('/user/:id/turnip-week', async (req, res) => {
+        const userId = parseInt(req.params.id);
+        const user = await userRepository.findOne({ id: userId });
+        const newWeek = new TurnipWeek();
+        newWeek.user = user;
+        newWeek.islandPrice = req.body.price;
+        await weekRepository.save(newWeek);
+        res.json({ week: { weekId: newWeek.id, price: newWeek.islandPrice } });
+    });
+
+    // GET Turnip Prices: /user/<userId >/turnip-week/<weekId>/turnip-prices
+    app.get('/user/:id/turnip-week/:weekId/turnip-prices', async (req, res) => {
+        const userId = parseInt(req.params.id);
+        const user = await userRepository.findOne({ id: userId });
+        const weekId = parseInt(req.params.weekId);
+        const week = await weekRepository.findOne({ id: weekId, user });
+
+        if (week === undefined) {
+            res.status(404).json({ message: 'Not found' });
+        } else {
+            const prices = week.turnipPrices || [];
+            res.json({
+                prices: prices.map(p => ({
+                    priceId: p.id,
+                    price: p.price,
+                    day: p.day,
+                    window: p.priceWindow,
+                })),
+            });
         }
     });
 
-    client.on('message', msg => {
-        (async (): Promise<void> => {
-            if (msg.author.bot) return;
+    // POST /user/:id/turnip-week/:weekId/turnip-prices
+    app.post('/user/:id/turnip-week/:weekId/turnip-prices', async (req, res) => {
+        const userId = parseInt(req.params.id);
+        const weekId = parseInt(req.params.weekId);
+        const user = await userRepository.findOne({ id: userId });
+        const week = await weekRepository.findOne({ id: weekId, user });
 
-            const { user, isNewUser } = await getOrCreateUserForMessageAuthor(userRepository, msg.author);
-            const messageState = new PersonalMessageState(getRedis(), user);
-            const server = await getOrCreateDiscordServer(serverRepository, msg);
-
-            if (server) {
-                user.discordServers = [...(user.discordServers || []), server];
-                await userRepository.save(user);
-            }
-
-            if (isNewUser) {
-                await beginWelcomeConversation(messageState, msg);
-                return;
-            }
-
-            const lastMessage = await messageState.getLastMessage();
-            if (msg.channel.type === 'dm' && lastMessage !== null) {
-                console.log(`Running hanlder for lastMessage ${lastMessage} for user ${user.id}`);
-                await messageHandlers[lastMessage]?.handler(messageState, connection, msg, user);
-            } else if (/^(\/\w+)/.test(msg.content)) {
-                const command = /^(\/turnip-\w+)/.exec(msg.content)?.pop();
-                msg.content = msg.content.toLowerCase().trim();
-                if (command && command in commands) {
-                    const handler = commands[command];
-                    console.log(`Detected command ${command}. Running validation`);
-                    if (await handler.validate(msg, user)) {
-                        console.log(`Running ${command} handler for user ${user.id}`);
-                        await handler.execute(msg, user);
-                        getEventEmitter().emit(`post ${command}`, { msg, user, connection, messageState });
-                    } else {
-                        await handler.help(msg, user);
-                    }
-                }
-            }
-
-            const messageToSend = await messageState.dequeueMessage();
-            if (messageToSend) {
-                console.log(`Dequeued ${messageToSend} for user id ${user.id}`);
-                await events.fireOperationForMessage(messageToSend, { msg, user, connection, messageState });
-            }
-        })();
+        const { price, priceWindow, day } = req.body;
+        const newPrice = new TurnipPrice();
+        newPrice.turnipWeek = week;
+        newPrice.price = price;
+        newPrice.priceWindow = priceWindow;
+        newPrice.day = day;
+        await priceRepository.save(newPrice);
+        res.json({ priceId: price.id });
     });
 
-    client.login(process.env.DISCORD_TOKEN);
+    // GET /report
+    app.get('/report', async (_, res) => {
+        // Return { report: [{ day: enum, averagePrice: float }] }
+        const pricesQuery = priceRepository
+            .createQueryBuilder('price')
+            .select(['AVG(price.price) as "avgPrice"', 'price.day', 'price.priceWindow'])
+            .groupBy('day, "priceWindow"');
+        const results = await pricesQuery.getRawMany();
+        res.json({
+            report: results
+                .sort((x, y) => x.price_day - y.price_day)
+                .map(p => ({
+                    day: p.price_day,
+                    priceWindow: p.price_priceWindow,
+                    averagePrice: parseFloat(p.avgPrice),
+                })),
+        });
+    });
+
+    const server = app.listen(3000, () => {
+        console.log('Server is running on port 80');
+    });
+
+    server.on('error', err => {
+        console.error('An error occurred', err);
+    });
 
     // CAPTURE APP TERMINATION / RESTART EVENTS
     // To be called when process is restarted or terminated
     const gracefulShutdown = (msg: string, callback: () => void): void => {
         console.log('Shutting down server for ' + msg);
-        client.removeAllListeners();
-        getEventEmitter().removeAllListeners();
         callback();
-        connection.close();
+        server.close();
     };
     // For nodemon restarts
     process.once('SIGUSR2', function () {
