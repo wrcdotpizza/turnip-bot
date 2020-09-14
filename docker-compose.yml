@@ -18,6 +18,12 @@ services:
     environment:
       POSTGRES_DB: turnip-tracker
       PGDATA: /var/lib/postgresql/data/pgdata
+  dynamodb:
+    image: amazon/dynamodb-local:latest
+    restart: always
+    ports:
+      - "8000:8000"
+    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-inMemory"]
   bot:
     container_name: turnip-bot
     build: ./
