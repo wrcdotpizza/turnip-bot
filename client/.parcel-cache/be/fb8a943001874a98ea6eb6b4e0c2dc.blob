@@ -1,0 +1,31 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.getWeeksForUser = getWeeksForUser;
+
+/*
+Endpoint that is to get all turnip weeks for a user
+Endpoint to list all turnip prices for a given week
+Endpoint to create turnip week
+Endpoint to create new turnip price.
+Endpoint to retrieve some giant report of average turnip prices.
+GET Weeks for User:	/user/<userId>/turnip-week
+	Return { weeks: [{weekId: integer, price: integer }] }
+POST Week for User: 	/user/<userId>/turnip-week 
+	JSON payload: { price: integer } Return { weekId: integer }
+GET Turnip Prices: 		/user/<userId>/turnip-week/<weekId>/turnip-prices
+	Return { prices: [{priceId: integer, price: integer, day: enum, window: (am|pm) }] }
+POST Turnip Price: 		/user/<userId>/turnip-week<weekId>/turnip-prices
+	JSON payload: { price: integer, priceWindow: am|pm, day: 0-5  (monday-saturday) } Return { priceId: integer }
+GET report:			/report
+	Return { report: [{day: enum, averagePrice: float}] }
+Techstack
+*/
+const baseUrl = 'http://localhost';
+
+async function getWeeksForUser(userId) {
+  let response = await fetch(`${baseUrl}/user/${userId}/turnip-week`);
+  return await response.json();
+}

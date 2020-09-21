@@ -1,0 +1,7 @@
+{
+    "compilerOptions": {
+        "downlevelIteration": true,
+        "jsx": "react",
+        "lib": ["ES7", "ES2017", "DOM"]
+    }
+}

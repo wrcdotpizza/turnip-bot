@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import { connectToDb } from './helpers/connect-to-db';
 import { TurnipWeek } from './entity/turnip-week';
 import { User } from './entity/user';
@@ -13,6 +14,7 @@ import { generateData } from './generate-data';
     const priceRepository = connection.getRepository(TurnipPrice);
 
     const app = express();
+    app.use(cors());
 
     // GET Weeks for User: /user/ < userId > /turnip-week
     app.get('/user/:id/turnip-week', async (req, res) => {

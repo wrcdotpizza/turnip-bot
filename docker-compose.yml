@@ -31,3 +31,14 @@ services:
         REDIS_HOST: cache
         TYPEORM_HOST: db
         DISCORD_TOKEN: ${DISCORD_TOKEN}
+  # client:
+  #   container_name: turnip-client
+  #   build: ./client
+  #   restart: always
+  #   command: npm start
+  #   ports:
+  #     - 1234:1234
+  #   volumes:
+  #     - ./client:/usr/local/src/client
+  #   tty: true
+  #   stdin_open: true
