@@ -128,7 +128,7 @@ export const generateData = async (
 
     try {
         const weekRepository = sqlConnection.getRepository(TurnipWeek);
-        const weeks = await weekRepository.find({ relations: ['turnipPrices'] });
+        const weeks = await weekRepository.find({ relations: ['turnipPrices', 'user'] });
         const itemsToCreate: { weeks: Array<Week> } = {
             weeks: [],
         };
