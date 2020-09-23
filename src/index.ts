@@ -5,14 +5,14 @@ import { buildRouter as noSqlRoutes } from './routes/nosql-routes';
 (async (): Promise<void> => {
     const app = express();
 
-    const server = app.listen(3000, () => {
-        console.log('Server is running on port 80');
-    });
-
     const sqlRouter = await sqlRoutes();
     const noSqlRouter = await noSqlRoutes();
     app.use('/sql', sqlRouter);
     app.use('/nosql', noSqlRouter);
+
+    const server = app.listen(3000, () => {
+        console.log('Server is running on port 80');
+    });
 
     server.on('error', err => {
         console.error('An error occurred', err);

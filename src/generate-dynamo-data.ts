@@ -1,10 +1,8 @@
-import { DynamoDB } from 'aws-sdk';
+import AWS, { DynamoDB } from 'aws-sdk';
 import { CreateTableInput } from 'aws-sdk/clients/dynamodb';
-// import { User } from './entity/user';
-// import { TurnipWeek } from './entity/turnip-week';
-// import { TurnipPrice, PriceDay, PriceWindow } from './entity/turnip-price';
-// import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator';
-// import { DiscordServer } from './entity/discord-server';
+import { formatISO } from 'date-fns';
+import { v4 as uuid } from 'uuid';
+import { PriceDay, PriceWindow } from './entity/turnip-price';
 
 const createUserTable = async (connection: DynamoDB): Promise<void> => {
     const userTableParams = {
@@ -74,24 +72,104 @@ const createTurnipWeekTable = async (connection: DynamoDB): Promise<void> => {
     await connection.createTable(turnipWeekTableParams).promise();
 };
 
-// const getName = (): string => uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+interface Price {
+    priceId: string;
+    price: number;
+    day: PriceDay;
+    window: PriceWindow;
+}
 
-// const createUser = (server: DiscordServer): User => {};
+const createTurnipPrice = (day: PriceDay, window: PriceWindow): Price => ({
+    priceId: uuid(),
+    price: Math.floor(Math.random() * 100),
+    day: day,
+    window: window,
+});
 
-// const createWeekForUser = (user: User): TurnipWeek => {};
+const createPricesForWeek = (): Array<Price> => {
+    const pricesToCreate = [];
 
-// const createTurnipPrice = (week: TurnipWeek, day: PriceDay, window: PriceWindow): TurnipPrice => {};
+    for (let day = PriceDay.monday; day <= PriceDay.saturday; day++) {
+        const morningPrice = createTurnipPrice(day, PriceWindow.am);
+        const afternoonPrice = createTurnipPrice(day, PriceWindow.pm);
+        pricesToCreate.push(morningPrice, afternoonPrice);
+    }
 
-// const createPricesForWeek = (week: TurnipWeek): Array<TurnipPrice> => {};
+    return pricesToCreate;
+};
+
+interface Week {
+    weekId: string;
+    userId: string;
+    createdDate: string;
+    islandPrice: number;
+    prices: Array<Price>;
+}
+
+const createWeekForUser = (userId: string): Week => {
+    return {
+        weekId: uuid(),
+        userId: userId,
+        createdDate: formatISO(new Date()),
+        islandPrice: 90,
+        prices: createPricesForWeek(),
+    };
+};
+
+function chunkArray<T>(array: Array<T>, chunkSize = 10): Array<Array<T>> {
+    const chunkedArray: Array<Array<T>> = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+        chunkedArray.push(array.slice(i, i + chunkSize));
+    }
+    return chunkedArray;
+}
 
 export const generateData = async (
     connection: DynamoDB,
     { numUsers, numWeeks }: { numUsers: number; numWeeks: number },
 ): Promise<void> => {
     console.log('IN GENERATE!', numUsers, numWeeks);
+
     try {
         await createUserTable(connection);
         await createTurnipWeekTable(connection);
+    } catch (e) {
+        console.error('Error while creating tables', e);
+    }
+
+    try {
+        const itemsToCreate: { weeks: Array<Week> } = {
+            weeks: [],
+        };
+
+        for (let userCount = 0; userCount < numUsers; userCount++) {
+            const userId = uuid();
+            for (let weekCount = 0; weekCount < numWeeks; weekCount++) {
+                itemsToCreate.weeks.push(createWeekForUser(userId));
+            }
+        }
+
+        const DynamoDB = new AWS.DynamoDB.DocumentClient({
+            endpoint: 'http://dynamodb:8000',
+            region: 'us-east-1',
+            accessKeyId: 'key',
+            secretAccessKey: 'secret',
+            sslEnabled: false,
+        });
+
+        const batches = chunkArray(itemsToCreate.weeks, 25);
+
+        for (const batch of batches) {
+            await DynamoDB.batchWrite({
+                RequestItems: {
+                    TurnipWeek: batch.map(w => ({
+                        PutRequest: {
+                            Item: w,
+                        },
+                    })),
+                },
+            }).promise();
+        }
     } catch (e) {
         console.log('OH NO~!', e);
     }
