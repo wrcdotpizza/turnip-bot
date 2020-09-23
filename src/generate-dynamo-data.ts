@@ -1,8 +1,9 @@
 import AWS, { DynamoDB } from 'aws-sdk';
 import { CreateTableInput } from 'aws-sdk/clients/dynamodb';
 import { formatISO } from 'date-fns';
-import { v4 as uuid } from 'uuid';
+import { Connection } from 'typeorm';
 import { PriceDay, PriceWindow } from './entity/turnip-price';
+import { TurnipWeek } from './entity/turnip-week';
 
 const createUserTable = async (connection: DynamoDB): Promise<void> => {
     const userTableParams = {
@@ -79,25 +80,6 @@ interface Price {
     window: PriceWindow;
 }
 
-const createTurnipPrice = (day: PriceDay, window: PriceWindow): Price => ({
-    priceId: uuid(),
-    price: Math.floor(Math.random() * 100),
-    day: day,
-    window: window,
-});
-
-const createPricesForWeek = (): Array<Price> => {
-    const pricesToCreate = [];
-
-    for (let day = PriceDay.monday; day <= PriceDay.saturday; day++) {
-        const morningPrice = createTurnipPrice(day, PriceWindow.am);
-        const afternoonPrice = createTurnipPrice(day, PriceWindow.pm);
-        pricesToCreate.push(morningPrice, afternoonPrice);
-    }
-
-    return pricesToCreate;
-};
-
 interface Week {
     weekId: string;
     userId: string;
@@ -106,13 +88,19 @@ interface Week {
     prices: Array<Price>;
 }
 
-const createWeekForUser = (userId: string): Week => {
+const createWeekForUser = (params: {
+    userId: string;
+    weekId: string;
+    createdDate: Date;
+    islandPrice: number;
+    prices: Array<Price>;
+}): Week => {
     return {
-        weekId: uuid(),
-        userId: userId,
-        createdDate: formatISO(new Date()),
-        islandPrice: 90,
-        prices: createPricesForWeek(),
+        weekId: params.weekId,
+        userId: params.userId,
+        createdDate: formatISO(params.createdDate),
+        islandPrice: params.islandPrice,
+        prices: params.prices,
     };
 };
 
@@ -126,6 +114,7 @@ function chunkArray<T>(array: Array<T>, chunkSize = 10): Array<Array<T>> {
 
 export const generateData = async (
     connection: DynamoDB,
+    sqlConnection: Connection,
     { numUsers, numWeeks }: { numUsers: number; numWeeks: number },
 ): Promise<void> => {
     console.log('IN GENERATE!', numUsers, numWeeks);
@@ -138,15 +127,27 @@ export const generateData = async (
     }
 
     try {
+        const weekRepository = sqlConnection.getRepository(TurnipWeek);
+        const weeks = await weekRepository.find({ relations: ['turnipPrices'] });
         const itemsToCreate: { weeks: Array<Week> } = {
             weeks: [],
         };
 
-        for (let userCount = 0; userCount < numUsers; userCount++) {
-            const userId = uuid();
-            for (let weekCount = 0; weekCount < numWeeks; weekCount++) {
-                itemsToCreate.weeks.push(createWeekForUser(userId));
-            }
+        for (const week of weeks) {
+            itemsToCreate.weeks.push(
+                createWeekForUser({
+                    weekId: week.id?.toString()!,
+                    userId: week.user?.id?.toString()!,
+                    createdDate: week.createdAt!,
+                    islandPrice: week.islandPrice!,
+                    prices: week.turnipPrices!.map(p => ({
+                        priceId: p.id?.toString()!,
+                        price: p.price!,
+                        window: p.priceWindow!,
+                        day: p.day!,
+                    })),
+                }),
+            );
         }
 
         const DynamoDB = new AWS.DynamoDB.DocumentClient({
@@ -171,6 +172,6 @@ export const generateData = async (
             }).promise();
         }
     } catch (e) {
-        console.log('OH NO~!', e);
+        console.log('OH NO!', e);
     }
 };

@@ -4,10 +4,11 @@ import { v4 as uuid } from 'uuid';
 import { connectToDynamo } from '../helpers/connect-to-db';
 import { generateData } from '../generate-dynamo-data';
 import { GetItemInput, PutItemInput, QueryInput } from 'aws-sdk/clients/dynamodb';
+import { Connection } from 'typeorm';
 
-export const buildRouter = async (): Promise<Router> => {
+export const buildRouter = async (sqlConnection: Connection): Promise<Router> => {
     const connection = connectToDynamo();
-    await generateData(connection, { numUsers: 100, numWeeks: 5 });
+    await generateData(connection, sqlConnection, { numUsers: 100, numWeeks: 5 });
 
     const noSqlRouter = express.Router();
 

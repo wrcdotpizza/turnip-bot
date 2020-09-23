@@ -46,6 +46,7 @@ export const generateData = async (
     connection: Connection,
     { numUsers, numWeeks }: { numUsers: number; numWeeks: number },
 ): Promise<void> => {
+    console.log('GENERATING Relational Data');
     const serverRepository = connection.getRepository(DiscordServer);
     const weekRepository = connection.getRepository(TurnipWeek);
     const priceRepository = connection.getRepository(TurnipPrice);

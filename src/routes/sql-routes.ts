@@ -1,12 +1,11 @@
 import express, { Router } from 'express';
-import { connectToDb } from '../helpers/connect-to-db';
 import { TurnipWeek } from '../entity/turnip-week';
 import { User } from '../entity/user';
 import { TurnipPrice } from '../entity/turnip-price';
 import { generateData } from '../generate-data';
+import { Connection } from 'typeorm';
 
-export const buildRouter = async (): Promise<Router> => {
-    const connection = await connectToDb();
+export const buildRouter = async (connection: Connection): Promise<Router> => {
     await generateData(connection, { numUsers: 100, numWeeks: 5 });
     const userRepository = connection.getRepository(User);
     const weekRepository = connection.getRepository(TurnipWeek);

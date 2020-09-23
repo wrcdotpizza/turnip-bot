@@ -1,12 +1,13 @@
 import express from 'express';
 import { buildRouter as sqlRoutes } from './routes/sql-routes';
 import { buildRouter as noSqlRoutes } from './routes/nosql-routes';
+import { connectToDb } from './helpers/connect-to-db';
 
 (async (): Promise<void> => {
     const app = express();
-
-    const sqlRouter = await sqlRoutes();
-    const noSqlRouter = await noSqlRoutes();
+    const connection = await connectToDb();
+    const sqlRouter = await sqlRoutes(connection);
+    const noSqlRouter = await noSqlRoutes(connection);
     app.use('/sql', sqlRouter);
     app.use('/nosql', noSqlRouter);
 
