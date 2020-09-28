@@ -14,6 +14,8 @@ ENV TYPEORM_MIGRATIONS=dist/migration/**/*.js
 ENV TYPEORM_SUBSCRIBERS=dist/subscriber/**/*.js
 ENV REDIS_HOST=localhost
 ENV DISCORD_TOKEN=foo
+ENV DYNAMO_HOST=localhost
+ENV DYNAMO_PORT=8000
 WORKDIR /opt
 COPY yarn.lock ./
 COPY package.json ./
