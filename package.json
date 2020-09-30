@@ -11,7 +11,7 @@
         "lint": "eslint '**/*.ts' --quiet --fix",
         "start": "node dist/index.js",
         "start:dev": "nodemon --inspect --watch dist dist/index.js",
-        "env:local": "npm run build:prod && docker-compose -f docker-compose.yml -f dev-compose.yml up --build -d"
+        "env:local": "npm run build:prod && docker-compose -f docker-compose.yml -f dev-compose.yml up --build"
     },
     "husky": {
         "hooks": {
@@ -51,8 +51,9 @@
         "url-parse": "^1.4.7"
     },
     "dependencies": {
-        "cors": "^2.8.5",
         "aws-sdk": "^2.756.0",
+        "body-parser": "^1.19.0",
+        "cors": "^2.8.5",
         "date-fns": "^2.16.1",
         "discord.js": "^12.2.0",
         "dotenv": "^8.2.0",

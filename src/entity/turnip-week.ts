@@ -4,8 +4,8 @@ import { TurnipPrice } from './turnip-price';
 
 @Entity()
 export class TurnipWeek {
-    @PrimaryGeneratedColumn()
-    id?: number;
+    @PrimaryGeneratedColumn("uuid")
+    id?: string;
 
     @CreateDateColumn()
     createdAt?: Date;

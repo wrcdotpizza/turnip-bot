@@ -1,3 +1,4 @@
+// @ts-nocheck
 enum PriceWindow {
     am = 'am',
     pm = 'pm',
@@ -31,8 +32,8 @@ export interface ReportResponse {
     report: Array<DailyPriceAverage>;
 }
 
-interface TurnipPrice {
-    priceId: number;
+export interface TurnipPrice {
+    priceId: string;
     price: number;
     day: PriceDay;
     window: PriceWindow;
@@ -43,7 +44,7 @@ interface TurnipPriceResponse {
 }
 
 export interface Week {
-    weekId: number;
+    weekId: string;
     price: number;
 }
 
@@ -51,47 +52,58 @@ interface WeekResponse {
     weeks: Array<Week>;
 }
 
-const baseUrl = 'http://localhost';
+export function build(basePrefix: string) {
+    const baseUrl = "http://localhost/" + basePrefix;
+    async function getWeeksForUser(userId: string): Promise<WeekResponse> {
+        let response = await fetch(`${baseUrl}/user/${userId}/turnip-week`);
+        return response.json();
+    }
 
-export async function getWeeksForUser(userId: number): Promise<WeekResponse> {
-    let response = await fetch(`${baseUrl}/user/${userId}/turnip-week`);
-    return response.json();
-}
+    async function getTurnipPricesForWeek(userId: string, weekId: string): Promise<Array<TurnipPrice>> {
+        let response = await fetch(`${baseUrl}/user/${userId}/turnip-week/${weekId}/turnip-prices`);
+        return response.json(); 
+    }
 
-export async function getTurnipPricesForWeek(userId: number, weekId: number): Promise<TurnipPriceResponse> {
-    let response = await fetch(`${baseUrl}/user/${userId}/turnip-week/${weekId}/turnip-prices`);
-    return response.json();
-}
+    async function setWeekPriceForUser(userId: string, price: number): Promise<string> {
+        let response = await fetch(`${baseUrl}/user/${userId}/turnip-week`, {
+            method: 'POST',
+            body: JSON.stringify({
+                price,
+            }),
+            headers: {"Content-Type": "application/json"},
+        });
+        return response.json();
+    }
 
-export async function setWeekPriceForUser(userId: number, price: number): Promise<number> {
-    let response = await fetch(`${baseUrl}/user/${userId}/turnip-week`, {
-        method: 'POST',
-        body: JSON.stringify({
-            price,
-        }),
-    });
-    return response.json();
-}
+    async function setPriceForDay(
+        userId: string,
+        weekId: string,
+        price: number,
+        day: PriceDay,
+        window: PriceWindow,
+    ): Promise<string> {
+        let response = await fetch(`${baseUrl}/user/${userId}/turnip-week/${weekId}/turnip-prices`, {
+            method: 'POST',
+            body: JSON.stringify({
+                price,
+                day,
+                window,
+            }),
+            headers: {"Content-Type": "application/json"},
+        });
+        return response.json();
+    }
 
-export async function setPriceForDay(
-    userId: number,
-    weekId: number,
-    price: number,
-    day: PriceDay,
-    priceWindow: PriceWindow,
-): Promise<number> {
-    let response = await fetch(`${baseUrl}/user/${userId}/turnip-week/${weekId}/turnip-prices`, {
-        method: 'POST',
-        body: JSON.stringify({
-            price,
-            day,
-            priceWindow,
-        }),
-    });
-    return response.json();
-}
+    async function getReport(): Promise<ReportResponse> {
+        let response = await fetch(`${baseUrl}/report`);
+        return response.json();
+    }
 
-export async function getReport(): Promise<ReportResponse> {
-    let response = await fetch(`${baseUrl}/report`);
-    return response.json();
+    return {
+        getWeeksForUser,
+        getTurnipPricesForWeek,
+        setWeekPriceForUser,
+        setPriceForDay,
+        getReport
+    }
 }

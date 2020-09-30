@@ -35,7 +35,7 @@ export const PriceDayForString = {
 
 @Entity()
 export class TurnipPrice {
-    @PrimaryGeneratedColumn()
+    @PrimaryGeneratedColumn("uuid")
     id?: string;
 
     @Column()

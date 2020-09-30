@@ -1,50 +1,54 @@
-version: "3.4"
+version: '3.4'
 services:
-  cache:
-    container_name: turnip-redis
-    image: redis:5
-    restart: always
-    ports: 
-      - "6379:6379"
-  db:
-    container_name: turnip-postgres
-    image: postgres:11.5
-    restart: always
-    ports:
-      - "5432:5432"
-    volumes:
-      - ./pgdata:/var/lib/postgresql/data
-      - ./db/init-db-and-user.sql:/docker-entrypoint-initdb.d/init-db-and-user.sql
-    environment:
-      POSTGRES_DB: turnip-tracker
-      PGDATA: /var/lib/postgresql/data/pgdata
-  dynamodb:
-    image: amazon/dynamodb-local:latest
-    restart: always
-    ports:
-      - "8000:8000"
-    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-inMemory"]
-  bot:
-    container_name: turnip-bot
-    build: ./
-    ports:
-      - "80:3000"
-    depends_on:
-      - cache
-      - db
-    restart: always
-    environment:
-        REDIS_HOST: cache
-        TYPEORM_HOST: db
-        DISCORD_TOKEN: ${DISCORD_TOKEN}
-  # client:
-  #   container_name: turnip-client
-  #   build: ./client
-  #   restart: always
-  #   command: npm start
-  #   ports:
-  #     - 1234:1234
-  #   volumes:
-  #     - ./client:/usr/local/src/client
-  #   tty: true
-  #   stdin_open: true
+    cache:
+        container_name: turnip-redis
+        image: redis:5
+        restart: always
+        ports:
+            - '6379:6379'
+    db:
+        container_name: turnip-postgres
+        image: postgres:11.5
+        restart: always
+        ports:
+            - '5432:5432'
+        volumes:
+            - ./pgdata:/var/lib/postgresql/data
+            - ./db/init-db-and-user.sql:/docker-entrypoint-initdb.d/init-db-and-user.sql
+        environment:
+            POSTGRES_DB: turnip-tracker
+            POSTGRES_USER: app
+            POSTGRES_PASS: password
+            PGDATA: /var/lib/postgresql/data/pgdata
+    dynamodb:
+        image: amazon/dynamodb-local:latest
+        restart: always
+        ports:
+            - '8000:8000'
+        command: ['-jar', 'DynamoDBLocal.jar', '-sharedDb', '-inMemory']
+    bot:
+        container_name: turnip-bot
+        build: ./
+        ports:
+            - '80:3000'
+        depends_on:
+            - cache
+            - db
+        restart: always
+        environment:
+            REDIS_HOST: cache
+            TYPEORM_HOST: db
+            DISCORD_TOKEN: ${DISCORD_TOKEN}
+    # client:
+    #     container_name: turnip-client
+    #     build: ./client
+    #     restart: always
+    #     command: yarn start
+    #     ports:
+    #         - '1234:1234'
+    #     volumes:
+    #         - ./client:/usr/local/src/client
+    #     links:
+    #         - bot
+    #     tty: true
+    #     stdin_open: true

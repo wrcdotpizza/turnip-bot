@@ -7,3 +7,5 @@ pgdata
 .DS_Store
 .env
 ormconfig.*.json
+client/.cache
+client/.parcel-cache

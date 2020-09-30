@@ -5,29 +5,6 @@ import { Connection } from 'typeorm';
 import { PriceDay, PriceWindow } from './entity/turnip-price';
 import { TurnipWeek } from './entity/turnip-week';
 
-const createUserTable = async (connection: DynamoDB): Promise<void> => {
-    const userTableParams = {
-        AttributeDefinitions: [
-            {
-                AttributeName: 'id',
-                AttributeType: 'N',
-            },
-        ],
-        KeySchema: [
-            {
-                AttributeName: 'id',
-                KeyType: 'HASH',
-            },
-        ],
-        ProvisionedThroughput: {
-            ReadCapacityUnits: 5,
-            WriteCapacityUnits: 5,
-        },
-        TableName: 'User',
-    };
-    await connection.createTable(userTableParams).promise();
-};
-
 const createTurnipWeekTable = async (connection: DynamoDB): Promise<void> => {
     const turnipWeekTableParams: CreateTableInput = {
         AttributeDefinitions: [
@@ -47,8 +24,8 @@ const createTurnipWeekTable = async (connection: DynamoDB): Promise<void> => {
             },
         ],
         ProvisionedThroughput: {
-            ReadCapacityUnits: 5,
-            WriteCapacityUnits: 5,
+            ReadCapacityUnits: 5000,
+            WriteCapacityUnits: 5000,
         },
         TableName: 'TurnipWeek',
         GlobalSecondaryIndexes: [
@@ -64,8 +41,8 @@ const createTurnipWeekTable = async (connection: DynamoDB): Promise<void> => {
                     },
                 ],
                 ProvisionedThroughput: {
-                    ReadCapacityUnits: 1,
-                    WriteCapacityUnits: 1,
+                    ReadCapacityUnits: 2000,
+                    WriteCapacityUnits: 2000,
                 },
             },
         ],
@@ -120,7 +97,6 @@ export const generateData = async (
     console.log('IN GENERATE!', numUsers, numWeeks);
 
     try {
-        await createUserTable(connection);
         await createTurnipWeekTable(connection);
     } catch (e) {
         console.error('Error while creating tables', e);

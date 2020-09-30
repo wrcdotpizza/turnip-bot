@@ -1,122 +1,158 @@
+// @ts-nocheck
 import express, { Router } from 'express';
 import { formatISO } from 'date-fns';
 import { v4 as uuid } from 'uuid';
-import { connectToDynamo } from '../helpers/connect-to-db';
+import { connectToDynamo, connectToDocumentClient } from '../helpers/connect-to-db';
 import { generateData } from '../generate-dynamo-data';
-import { GetItemInput, PutItemInput, QueryInput } from 'aws-sdk/clients/dynamodb';
 import { Connection } from 'typeorm';
+import { DocumentClient } from 'aws-sdk/clients/dynamodb';
+
+interface PriceInfo {
+    priceId: string;
+    price: number;
+    day: number;
+    window: string;
+}
 
 export const buildRouter = async (sqlConnection: Connection): Promise<Router> => {
-    const connection = connectToDynamo();
-    await generateData(connection, sqlConnection, { numUsers: 100, numWeeks: 5 });
+    const dynamoClient = connectToDynamo();
+    const documentClient = connectToDocumentClient();
+
+    await generateData(dynamoClient, sqlConnection, { numUsers: 100, numWeeks: 5 });
 
     const noSqlRouter = express.Router();
 
     // GET Weeks for User: /user/ < userId > /turnip-week
     noSqlRouter.get('/user/:id/turnip-week', async (req, res) => {
-        const userId = parseInt(req.params.id);
-        const params: QueryInput = {
+        const userId = req.params.id;
+        const params: DocumentClient.QueryInput = {
             TableName: 'TurnipWeek',
             IndexName: 'userId-index',
             // Fields to return
             ProjectionExpression: 'weekId, islandPrice',
             ExpressionAttributeValues: {
-                ':u': { S: `${userId}` },
+                ':u': userId,
             },
             KeyConditionExpression: 'userId = :u',
         };
-        const response = await connection.query(params).promise();
+        const response = await documentClient.query(params).promise();
         const weeks = response.Items?.map(({ weekId, islandPrice }) => ({
-            weekId: weekId.S,
-            price: parseFloat(islandPrice.N!),
+            weekId,
+            price: parseFloat(islandPrice),
         }));
         res.json({ weeks });
     });
 
     // POST Week for User: /user/<userId>/turnip-week
     noSqlRouter.post('/user/:id/turnip-week', async (req, res) => {
-        console.log('incoming price', req.body);
         const userId = req.params.id;
-        // const islandPrice = req.body.price;
-        const islandPrice = 90;
+        const islandPrice = req.body.price;
         const weekId = uuid();
         const createdDate = formatISO(new Date());
-        const params: PutItemInput = {
+        const params: DocumentClient.PutItemInput = {
             TableName: 'TurnipWeek',
             Item: {
-                weekId: { S: weekId },
-                userId: { S: userId },
-                createdDate: { S: createdDate },
-                islandPrice: { N: `${islandPrice}` },
-                prices: { L: [] },
+                weekId: weekId,
+                userId: userId,
+                createdDate: createdDate,
+                islandPrice: islandPrice,
+                prices: [],
             },
         };
-        await connection.putItem(params).promise();
+        await documentClient.put(params).promise();
         res.json({ week: { weekId, price: islandPrice } });
     });
 
-    // GET Turnip Prices: /user/<userId >/turnip-week/<weekId>/turnip-prices
     noSqlRouter.get('/user/:id/turnip-week/:weekId/turnip-prices', async (req, res) => {
         const weekId = req.params.weekId;
-        const params: GetItemInput = {
+        const params: DocumentClient.GetItemInput = {
             TableName: 'TurnipWeek',
             Key: {
-                weekId: { S: weekId },
+                weekId,
             },
         };
-        console.log('PARAMS', params);
-        const response = await connection.getItem(params).promise();
+        const response = await documentClient.get(params).promise();
         if (response.Item === undefined) {
             res.status(404).json({ message: 'Not found' });
             return;
         }
-        const prices = response.Item.prices.L!.map(item => {
-            const price = item.M!;
+        const prices = response.Item.prices.map(({priceId, price, day, window}: PriceInfo) => {
             return {
-                priceId: price.priceId.S,
-                price: parseInt(price.price.N!),
-                day: parseInt(price.day.N!),
-                window: price.priceWindow.S,
+                priceId,
+                price,
+                day,
+                window,
             };
         });
         res.json({ prices });
     });
 
-    // POST /user/:id/turnip-week/:weekId/turnip-prices
-    noSqlRouter.post('/user/:id/turnip-week/:weekId/turnip-prices', (req, res) => {
-        console.log(req, res);
-        // const userId = parseInt(req.params.id);
-        // const weekId = parseInt(req.params.weekId);
-        // const user = await userRepository.findOne({ id: userId });
-        // const week = await weekRepository.findOne({ id: weekId, user });
-        // const { price, priceWindow, day } = req.body;
-        // const newPrice = new TurnipPrice();
-        // newPrice.turnipWeek = week;
-        // newPrice.price = price;
-        // newPrice.priceWindow = priceWindow;
-        // newPrice.day = day;
-        // await priceRepository.save(newPrice);
-        // res.json({ priceId: price.id });
+    noSqlRouter.post('/user/:id/turnip-week/:weekId/turnip-prices', async (req, res) => {
+        const weekId = req.params.weekId;
+        const price = req.body.price;
+        const day = req.body.day;
+        const window = req.body.window;
+        const priceId = uuid();
+        const priceInfo = {
+            priceId,
+            price,
+            day,
+            window,
+        }
+        const params: DocumentClient.UpdateItemInput = {
+            TableName: 'TurnipWeek',
+            Key: { weekId },
+            UpdateExpression: "SET #prices = list_append(#prices, :prices)",
+            ExpressionAttributeNames: {"#prices": "prices"},
+            ExpressionAttributeValues: { ":prices": [priceInfo] }
+        }
+        await documentClient.update(params).promise();
+        res.json({ priceId });
     });
 
-    // GET /report
-    noSqlRouter.get('/report', (_, res) => {
-        console.log(res);
-        // // Return { report: [{ day: enum, averagePrice: float }] }
-        // const pricesQuery = priceRepository
-        //     .createQueryBuilder('price')
-        //     .select(['AVG(price.price) as "avgPrice"', 'price.day', 'price.priceWindow'])
-        //     .groupBy('day, "priceWindow"');
-        // const results = await pricesQuery.getRawMany();
-        // res.json({
-        //     report: results
-        //         .sort((x, y) => x.price_day - y.price_day)
-        //         .map(p => ({
-        //             day: p.price_day,
-        //             priceWindow: p.price_priceWindow,
-        //             averagePrice: parseFloat(p.avgPrice),
-        //         })),
-        // });
+    noSqlRouter.get('/report', async (_, res) => {
+        let params: DocumentClient.ScanInput = {
+            TableName: 'TurnipWeek',
+        }
+        let previousKey;
+        let data = [];
+        do {
+            const response = await documentClient.scan(params).promise();
+            response.Items!.forEach(row => data.push(...row.prices));
+            previousKey = response.LastEvaluatedKey;
+        } while(previousKey);
+
+        const totals = data.reduce((acc, current) => {
+            const { day, price, window } = current;
+            acc[day][window]['count'] += 1;
+            acc[day][window]['total'] += price;
+            return acc;
+        }, {
+            0: { am: {count: 0, total: 0}, pm: {count: 0, total: 0}},
+            1: { am: {count: 0, total: 0}, pm: {count: 0, total: 0}},
+            2: { am: {count: 0, total: 0}, pm: {count: 0, total: 0}},
+            3: { am: {count: 0, total: 0}, pm: {count: 0, total: 0}},
+            4: { am: {count: 0, total: 0}, pm: {count: 0, total: 0}},
+            5: { am: {count: 0, total: 0}, pm: {count: 0, total: 0}},
+        });
+
+        const report = [];
+        Object.entries(totals).forEach(([day, windows]) => {
+            const am = {
+                day: parseInt(day),
+                priceWindow: "am",
+                averagePrice: windows.am.total / windows.am.count
+            }
+            const pm = {
+                day: parseInt(day),
+                priceWindow: "pm",
+                averagePrice: windows.pm.total / windows.pm.count
+            }
+            report.push(am);
+            report.push(pm);
+        })
+
+        res.json({ report });
     });
 
     return noSqlRouter;

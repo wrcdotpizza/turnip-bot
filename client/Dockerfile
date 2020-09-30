@@ -4,8 +4,8 @@ WORKDIR /usr/local/src/client
 
 COPY . .
 
-RUN npm i
+RUN yarn install
 
 EXPOSE 1234
 
-CMD ["npm", "start"]
+CMD ["yarn", "start"]

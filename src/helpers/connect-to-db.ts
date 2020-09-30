@@ -1,4 +1,5 @@
 import { DynamoDB } from 'aws-sdk';
+import { DocumentClient } from 'aws-sdk/clients/dynamodb';
 import { createConnection, Connection } from 'typeorm';
 
 export const connectToDb = async (maxRetries = 10, currentRetryNumber = 0, timeout = 3000): Promise<Connection> => {
@@ -24,3 +25,13 @@ export const connectToDynamo = (): DynamoDB => {
         sslEnabled: false,
     });
 };
+
+export const connectToDocumentClient = (): DocumentClient => {
+    return new DynamoDB.DocumentClient({
+            endpoint: 'http://dynamodb:8000',
+            region: 'us-east-1',
+            accessKeyId: 'key',
+            secretAccessKey: 'secret',
+            sslEnabled: false,
+        });
+}

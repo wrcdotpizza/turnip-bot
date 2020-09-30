@@ -5,8 +5,8 @@ import { DiscordServer } from './discord-server';
 
 @Entity()
 export class User {
-    @PrimaryGeneratedColumn()
-    id?: number;
+    @PrimaryGeneratedColumn("uuid")
+    id?: string;
 
     @Column()
     name?: string;

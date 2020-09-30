@@ -1,0 +1,62 @@
+
+html {
+    margin: 0;
+}
+
+:root {
+    --dark-green: #06a27a;
+    --green: rgb(157,255,176);
+    --blue: rgb(129,241,247);
+    --brown: rgb(196,141,63);
+    --yellow: rgb(255,245,99);
+}
+
+body {
+    font-family: 'FinkHeavy';
+}
+
+span.MuiTab-wrapper {
+    font-family: 'FinkHeavy';
+    font-size: 1.5em;
+    font-weight: bold;
+    
+}
+
+span.MuiTypography-h3 {
+    font-family: 'FinkHeavy';
+}
+
+.header {
+    background: var(--brown);
+    display: flex;
+    align-items: center;
+    margin: 8px;
+}
+
+.logo {
+    min-width: 100px;
+    min-height: 100px;
+    background: url('./img/turnip.svg');
+    background-position: 0 0;
+    background-repeat: no-repeat;
+    position: relative;
+    display: inline-block;
+}
+
+.logo::before {
+    content: '';
+}
+
+.logo-text {
+    flex-grow: 1;
+}
+
+.tab-bar .MuiTabs-flexContainer {
+    background: var(--dark-green);
+}
+
+.toggle {
+    align-self: flex-end;
+    justify-content: flex-end;
+    margin: 8px;
+}

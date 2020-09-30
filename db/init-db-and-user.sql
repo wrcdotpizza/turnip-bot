@@ -1,3 +1,2 @@
-CREATE USER app WITH PASSWORD 'password';
 CREATE DATABASE turnip_tracker;
-GRANT ALL PRIVILEGES ON DATABASE turnip_tracker TO app;
+ALTER ROLE app SUPERUSER;
