@@ -120,6 +120,7 @@ export const buildRouter = async (sqlConnection: Connection): Promise<Router> =>
         let previousKey;
         let data = [];
         do {
+            const reqParams = {...params, previousKey};
             const response = await documentClient.scan(params).promise();
             response.Items!.forEach(row => data.push(...row.prices));
             previousKey = response.LastEvaluatedKey;
