@@ -28,7 +28,7 @@ import {
     Week
 } from './api';
 
-let userId = "6573be38-c8e2-4f22-abbe-0c81b00b3e2c";
+let userId = "d7dc44b3-ac6d-44f3-a34f-6bd6c9818563";
 
 function App() {
     let [selectedTab, setSelectedTab] = React.useState(0);
@@ -112,7 +112,7 @@ function Profile(props) {
         <>
             <Toolbar style={{ padding: 0 }}>
                 <Typography variant="h6" component="div">
-                    Weekly Prices
+                    Purchase Prices
                 </Typography>
             </Toolbar>
             <TableContainer component={Paper}>

@@ -19,9 +19,13 @@ const createTurnipWeekTable = async (connection: DynamoDB): Promise<void> => {
         ],
         KeySchema: [
             {
-                AttributeName: 'weekId',
+                AttributeName: 'userId',
                 KeyType: 'HASH',
             },
+            {
+                AttributeName: 'weekId',
+                KeyType: 'RANGE'
+            }
         ],
         ProvisionedThroughput: {
             ReadCapacityUnits: 5000,

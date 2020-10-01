@@ -27,7 +27,6 @@ export const buildRouter = async (sqlConnection: Connection): Promise<Router> =>
         const userId = req.params.id;
         const params: DocumentClient.QueryInput = {
             TableName: 'TurnipWeek',
-            IndexName: 'userId-index',
             // Fields to return
             ProjectionExpression: 'weekId, islandPrice',
             ExpressionAttributeValues: {
@@ -64,11 +63,13 @@ export const buildRouter = async (sqlConnection: Connection): Promise<Router> =>
     });
 
     noSqlRouter.get('/user/:id/turnip-week/:weekId/turnip-prices', async (req, res) => {
+        const userId = req.params.id;
         const weekId = req.params.weekId;
         const params: DocumentClient.GetItemInput = {
             TableName: 'TurnipWeek',
             Key: {
-                weekId,
+                userId,
+                weekId
             },
         };
         const response = await documentClient.get(params).promise();
@@ -88,6 +89,7 @@ export const buildRouter = async (sqlConnection: Connection): Promise<Router> =>
     });
 
     noSqlRouter.post('/user/:id/turnip-week/:weekId/turnip-prices', async (req, res) => {
+        const userId = req.params.id;
         const weekId = req.params.weekId;
         const price = req.body.price;
         const day = req.body.day;
@@ -99,9 +101,10 @@ export const buildRouter = async (sqlConnection: Connection): Promise<Router> =>
             day,
             window,
         }
+        console.log("HERE TOO", userId);
         const params: DocumentClient.UpdateItemInput = {
             TableName: 'TurnipWeek',
-            Key: { weekId },
+            Key: { weekId, userId },
             UpdateExpression: "SET #prices = list_append(#prices, :prices)",
             ExpressionAttributeNames: {"#prices": "prices"},
             ExpressionAttributeValues: { ":prices": [priceInfo] }
